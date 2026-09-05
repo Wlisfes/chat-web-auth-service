@@ -16,6 +16,57 @@
 | 健康检查 | `/health/live`（容器探针）、`/health/ready`（依赖就绪） |
 | 网关前缀 | `/api/auth` |
 
+## Nacos 配置清单
+
+Data ID `chat-web-auth-service.yaml`（`DEFAULT_GROUP`）：
+
+```yaml
+server:
+    port: 5050
+
+# 共享账号数据库；只读取 tb_account_user，唯一写入字段是 last_login_time。
+database:
+    chat-web-account:
+        host: chat-web-mysql
+        port: 3306
+        name: chat_web_account
+        username: '<账号库用户名>'
+        password: '<账号库密码>'
+        charset: utf8mb4
+        timezone: '+08:00'
+
+# 登录会话与图形验证码；index 0 由本服务独占。
+redis:
+    host: chat-web-redis
+    port: 6379
+    database: 0
+    tls: false
+    connectTimeoutMs: 5000
+
+# 令牌签发参数；必须与迁移前 chat-web-account-service.yaml 的值完全一致，
+# 否则所有存量访问令牌和登录会话立即失效。
+security:
+    jwt:
+        secret: '<至少32位随机串>'
+        issuer: chat-web-account-service
+        audience: chat-web
+        accessTokenTtlSeconds: 36000
+    session:
+        prefix: '<与迁移前一致>'
+
+# 内部内省接口的调用方凭据；与网关和各业务服务保持同一个值。
+feign:
+    service_token: '<服务间共享凭据>'
+
+# 本服务自身的公开接口也经网关进入，因此同样需要身份上下文验签密钥。
+gateway:
+    principal:
+        secret: '<与网关一致的至少32位随机串>'
+        maxAgeSeconds: 60
+```
+
+> `security.jwt.*` 与 `security.session.prefix` 必须在删除账号服务同名配置**之前**原样复制过来。
+
 ## 常用排障命令
 
 ```bash
