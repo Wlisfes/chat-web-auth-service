@@ -8,7 +8,13 @@ import { AUTH_CAPTCHA_COOKIE } from '@/modules/auth/captcha.service'
 import { CodexWriteQueryDto, LoginDto } from '@/modules/auth/dto/login.dto'
 import { AccessTokenResponseDto, AccountUserResponseDto, LoginResponseDto } from '@/dto/api-response.dto'
 
-@ApifoxController('身份认证', 'auth')
+/**
+ * 认证接口控制器。
+ *
+ * 服务名称段由网关的 `/api/auth` 路由承担，控制器只声明业务资源路径，
+ * 因此这里不再重复 `auth` 前缀，否则经网关转发后会变成 `/auth/token/login`。
+ */
+@ApifoxController('身份认证')
 export class AuthController {
     constructor(private readonly authService: AuthService) {}
 

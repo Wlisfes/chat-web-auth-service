@@ -13,14 +13,16 @@ Chat Web 鉴权服务。负责登录、图形验证码、令牌签发与轮换�
 
 网关前缀为 `/api/auth`。
 
-| 方法 | 路径 | 认证 | 说明 |
-| --- | --- | --- | --- |
-| GET | `/auth/codex/write` | 公开 | 获取图形验证码，同时下发验证码 Cookie |
-| POST | `/auth/token/login` | 公开 | 使用工号、手机号或邮箱登录并签发 Bearer Token |
-| POST | `/auth/token/continue` | Bearer | 续期并轮换当前登录会话 |
-| POST | `/auth/token/logout` | Bearer | 退出并撤销当前登录会话 |
-| GET | `/auth/token/resolver` | Bearer | 获取当前登录账号资料 |
-| GET | `/health` `/health/live` `/health/ready` | 公开 | 运行状态检查 |
+服务名称段由网关的 `/api/auth` 路由承担，控制器只声明业务资源路径，因此服务内路径不含 `auth` 段。
+
+| 方法 | 服务内路径 | 网关路径 | 认证 | 说明 |
+| --- | --- | --- | --- | --- |
+| GET | `/codex/write` | `/api/auth/codex/write` | 公开 | 获取图形验证码，同时下发验证码 Cookie |
+| POST | `/token/login` | `/api/auth/token/login` | 公开 | 使用工号、手机号或邮箱登录并签发 Bearer Token |
+| POST | `/token/continue` | `/api/auth/token/continue` | Bearer | 续期并轮换当前登录会话 |
+| POST | `/token/logout` | `/api/auth/token/logout` | Bearer | 退出并撤销当前登录会话 |
+| GET | `/token/resolver` | `/api/auth/token/resolver` | Bearer | 获取当前登录账号资料 |
+| GET | `/health` `/health/live` `/health/ready` | `/api/auth/health/**` | 公开 | 运行状态检查 |
 
 ## 内部路由
 

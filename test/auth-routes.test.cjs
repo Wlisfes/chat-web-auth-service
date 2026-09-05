@@ -15,7 +15,8 @@ function routeOf(controller, method) {
 }
 
 test('公开认证路由保持前端约定的路径与方法', () => {
-    assert.equal(Reflect.getMetadata(PATH_METADATA, AuthController), 'auth')
+    // 控制器不带 auth 前缀：服务名称段由网关 /api/auth 路由承担，避免转发后出现重复段。
+    assert.equal(Reflect.getMetadata(PATH_METADATA, AuthController), '')
     assert.deepEqual(routeOf(AuthController, 'httpBaseAuthWriteCodex'), { path: 'codex/write', method: RequestMethod.GET })
     assert.deepEqual(routeOf(AuthController, 'httpBaseAuthLoginToken'), { path: 'token/login', method: RequestMethod.POST })
     assert.deepEqual(routeOf(AuthController, 'httpBaseAuthContinueToken'), { path: 'token/continue', method: RequestMethod.POST })
