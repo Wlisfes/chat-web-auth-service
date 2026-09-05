@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common'
 import { APP_GUARD } from '@nestjs/core'
 import { ConfigModule } from '@nestjs/config'
-import { JwtAuthGuard } from '@wlisfes/chat-web-base-schema/auth'
+import { GatewayPrincipalGuard, GatewayPrincipalModule } from '@wlisfes/chat-web-base-schema/auth'
 import { SessionAuthModule } from '@wlisfes/chat-web-base-schema/auth-session'
 import { HttpResponseModule } from '@wlisfes/chat-web-base-schema/interceptor'
 import { forRootNacosRuntimeOptions, NacosModule } from '@wlisfes/chat-web-base-schema/nacos'
@@ -20,12 +20,14 @@ import { HealthModule } from '@/modules/health/health.module'
         RedisModule.forRoot({ database: 0 }),
         HttpResponseModule,
         DatabaseModule,
-        // 鉴权服务是唯一持有 JWT 密钥并直接校验会话的服务。
+        // 鉴权服务是唯一持有 JWT 密钥并直接读写登录会话的服务。
         SessionAuthModule,
+        // 自身的公开接口同样经网关进入，因此也只校验网关签发的身份上下文签名。
+        GatewayPrincipalModule,
         AuthModule,
         HealthModule
     ],
     controllers: [AppController],
-    providers: [AppService, { provide: APP_GUARD, useExisting: JwtAuthGuard }]
+    providers: [AppService, { provide: APP_GUARD, useExisting: GatewayPrincipalGuard }]
 })
 export class AppModule {}
