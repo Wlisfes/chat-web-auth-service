@@ -1,0 +1,171 @@
+name: Build and deploy
+
+on:
+    push:
+        branches:
+            - main
+    workflow_dispatch:
+
+jobs:
+    verify:
+        name: Verify service
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            packages: read
+
+        steps:
+            - name: Check out repository
+              uses: actions/checkout@v4
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: yarn
+                  registry-url: https://npm.pkg.github.com
+                  scope: '@wlisfes'
+
+            - name: Install dependencies
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: yarn install --frozen-lockfile --non-interactive
+
+            - name: Check formatting
+              run: yarn format:check
+
+            - name: Type check
+              run: yarn typecheck
+
+            - name: Build and test
+              run: yarn test
+
+    build:
+        name: Build and publish image
+        needs: verify
+        runs-on: ubuntu-latest
+        concurrency:
+            group: build-${{ github.ref }}
+            cancel-in-progress: true
+        permissions:
+            contents: read
+            packages: write
+        outputs:
+            image: ${{ steps.image.outputs.name }}
+
+        steps:
+            - name: Check out repository
+              uses: actions/checkout@v4
+
+            - name: Resolve image name
+              id: image
+              shell: bash
+              run: |
+                  repository="ghcr.io/${GITHUB_REPOSITORY,,}"
+                  echo "name=${repository}:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+                  echo "latest=${repository}:latest" >> "$GITHUB_OUTPUT"
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+
+            - name: Log in to GitHub Container Registry
+              uses: docker/login-action@v3
+              with:
+                  registry: ghcr.io
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Build and push image
+              uses: docker/build-push-action@v6
+              with:
+                  context: .
+                  push: true
+                  tags: |
+                      ${{ steps.image.outputs.name }}
+                      ${{ steps.image.outputs.latest }}
+                  labels: |
+                      org.opencontainers.image.revision=${{ github.sha }}
+                      org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
+                  secrets: |
+                      github_token=${{ secrets.GITHUB_TOKEN }}
+
+    deploy:
+        name: Deploy to chat-home-server
+        needs: build
+        runs-on:
+            - self-hosted
+            - linux
+            - chat-home-server
+        environment: production-home
+        concurrency:
+            group: deploy-chat-home-server
+            cancel-in-progress: true
+        permissions:
+            contents: read
+            packages: read
+        env:
+            DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/chat-web-auth-service' }}
+            DEPLOYMENT_ENVIRONMENT: production-home
+            IMAGE: ${{ needs.build.outputs.image }}
+
+        steps:
+            - name: Check out deployment files
+              uses: actions/checkout@v4
+
+            - name: Validate local Docker host
+              shell: bash
+              run: |
+                  set -eu
+                  [[ "$DEPLOY_PATH" =~ ^/[A-Za-z0-9._/-]+$ ]] || { echo "DEPLOY_PATH must be an absolute path" >&2; exit 1; }
+                  command -v docker >/dev/null
+                  export DOCKER_CONFIG="$RUNNER_TEMP/chat-web-auth-service-docker-config"
+                  printf 'DOCKER_CONFIG=%s\n' "$DOCKER_CONFIG" >> "$GITHUB_ENV"
+                  mkdir -p "$DOCKER_CONFIG"
+                  chmod 700 "$DOCKER_CONFIG"
+                  docker compose version
+                  docker info >/dev/null
+                  mkdir -p "$DEPLOY_PATH"
+                  test -w "$DEPLOY_PATH" || { echo "$DEPLOY_PATH is not writable by the runner user" >&2; exit 1; }
+                  test -f "$DEPLOY_PATH/.env" || { echo "Missing $DEPLOY_PATH/.env" >&2; exit 1; }
+
+            - name: Install deployment files
+              shell: bash
+              run: |
+                  set -eu
+                  install -m 0644 deploy/compose.yml "$DEPLOY_PATH/compose.yml"
+                  install -m 0755 deploy/deploy.sh "$DEPLOY_PATH/deploy.sh"
+
+            - name: Pull and deploy image
+              shell: bash
+              env:
+                  GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  set -eu
+                  login_attempt=1
+                  login_attempts=8
+                  until printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username '${{ github.actor }}' --password-stdin; do
+                    if [ "$login_attempt" -ge "$login_attempts" ]; then
+                      echo "Failed to log in to ghcr.io after $login_attempts attempts." >&2
+                      exit 1
+                    fi
+
+                    delay=$((login_attempt * 5))
+                    echo "GHCR login attempt $login_attempt failed; retrying in ${delay}s." >&2
+                    sleep "$delay"
+                    login_attempt=$((login_attempt + 1))
+                  done
+                  cd "$DEPLOY_PATH"
+                  ./deploy.sh "$IMAGE" compose.yml
+
+            - name: Verify internal introspection endpoint
+              shell: bash
+              run: |
+                  set -eu
+                  docker exec chat-web-auth-service node -e "require('http').get('http://127.0.0.1:5050/health/ready', response => { process.exit(response.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
+
+            - name: Log out from GitHub Container Registry
+              if: always()
+              shell: bash
+              run: docker logout ghcr.io >/dev/null 2>&1 || true
