@@ -36,6 +36,7 @@
 - 本服务独占 Redis index `0`，只存放登录会话和图形验证码，不得写入其他 index，账号服务迁移后不再使用该索引。
 - 授权（权限码校验）不属于本服务职责，`RequirePermissions` 相关逻辑留在账号服务。
 - 网关入口认证使用 `/internal/auth/token/introspect` 独立协议：用户令牌通过请求体传递，调用方身份通过 `X-Service-Token` 校验，服务凭据读取 Nacos `feign.service_token`。该路由不得加入 `gateway.routes`，也不得通过公开网关前缀暴露。
+- 本服务不需要配置 `feign.gateway.url`，也不作为业务 Feign 调用方；Gateway 通过 Nacos 服务发现直接访问本服务的内部内省地址。
 - 本服务需要其他业务数据时必须使用共享包的强类型 HTTP 客户端，不得连接其他服务数据库或执行跨业务库 SQL。
 
 ## HTTP 模块实现基准

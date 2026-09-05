@@ -99,7 +99,7 @@ Nacos `chat-web-auth-service.yaml` 缺少或错配 JWT 配置。确认 `security
 内部认证是网关入口认证的必要依赖，缺失时刻意阻止启动。在 Nacos 补齐 `feign.service_token`。
 
 **登录成功但访问其他服务返回 401**
-检查各业务服务 Nacos 的 `feign.chat-web-auth.url` 是否指向本服务，`feign.service_token` 是否与本服务一致。
+检查 Gateway Nacos 是否配置了 `gateway.auth`、`gateway.routes` 中的 `id: auth` 路由，以及 Gateway 与本服务的 `feign.service_token` 是否一致；业务服务只验签 Gateway 下发的身份上下文。
 
 **所有用户被迫重新登录**
 通常是 `security.session.prefix` 或 `security.jwt.secret` 与迁移前不一致。恢复原值即可，会话数据本身没有丢失。

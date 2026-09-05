@@ -1,5 +1,14 @@
 # 部署变更记录
 
+## 2026-09-05 统一网关入口认证职责
+
+- 影响机器：`chat-home-server`。
+- 关联版本：Auth 当前 `developer` 分支改动。
+- 变更内容：Auth 仅通过内部 `POST /internal/auth/token/introspect` 接收 Gateway 的用户令牌校验请求；该协议使用 `X-Service-Token` 校验调用方，不属于业务 Feign 路由。Auth 不配置 `feign.gateway` 或任何逐服务地址。
+- 机器侧操作：在 `chat-web-auth-service.yaml` 保留数据库、Redis、JWT、会话配置和 `feign.service_token`；确认该凭据与 Gateway 一致。内部内省路径不得加入公开 `gateway.routes`。
+- 验证命令：`yarn format:check && yarn typecheck && yarn test`；部署后分别验证登录、验证码和内部令牌内省。
+- 回滚方法：恢复上一完整 Git SHA；不要把 Auth 的认证配置复制回业务服务。
+
 ## 2026-09-05 初始化鉴权服务
 
 - 影响机器：`chat-home-server`
