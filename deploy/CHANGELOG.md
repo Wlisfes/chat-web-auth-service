@@ -1,5 +1,14 @@
 # 部署变更记录
 
+## 2026-09-07：清理 Auth 未使用的 Feign Gateway 配置
+
+- 影响机器：Home（`chat-server-home`）。
+- 关联版本：Auth 当前完整 Git SHA。
+- 变更内容：Auth Nacos 删除未使用的 `feign.gateway`，仅保留内部鉴权所需的 `feign.service_token`。
+- 机器侧操作：更新 Nacos `chat-web-auth-service.yaml`，确认 Gateway 继续使用内部鉴权路径和相同服务凭据。
+- 验证命令：`yarn format:check && yarn typecheck && yarn test`；部署后验证登录、验证码和 `/internal/auth/token/introspect`。
+- 回滚方法：恢复上一完整 Git SHA，并按备份恢复 `feign.gateway` 节点。
+
 ## 2026-09-05 统一网关入口认证职责
 
 - 影响机器：`chat-home-server`。
