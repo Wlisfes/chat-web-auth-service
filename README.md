@@ -44,7 +44,7 @@ Data ID `chat-web-auth-service.yaml` 必须提供：
 - `redis`：登录会话存储，`database` 固定为 `0`。
 - `security.jwt.secret` / `issuer` / `audience` / `accessTokenTtlSeconds`：令牌签发参数。
 - `security.session.prefix`：登录会话键前缀。
-- `feign.service_token`：内部认证接口的服务间共享凭据。
+- `gateway.feign.service_token`：内部认证接口的服务间共享凭据。
 - Auth 不需要逐服务 Feign 地址；Gateway 通过 `gateway.routes` 的 Auth 服务路由和 Nacos 服务发现访问内部内省接口。
 
 ## 本地开发

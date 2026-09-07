@@ -55,8 +55,9 @@ security:
         prefix: '<与迁移前一致>'
 
 # 内部内省接口的调用方凭据；与网关和各业务服务保持同一个值。
-feign:
-    service_token: '<服务间共享凭据>'
+gateway:
+    feign:
+        service_token: '<服务间共享凭据>'
 
 # 本服务自身的公开接口也经网关进入，因此同样需要身份上下文验签密钥。
 gateway:
@@ -95,11 +96,11 @@ docker inspect --format '{{json .HostConfig.LogConfig}}' chat-web-auth-service
 **启动即退出，报 `security.jwt.secret 必须至少32位`**
 Nacos `chat-web-auth-service.yaml` 缺少或错配 JWT 配置。确认 `security.jwt.secret`、`issuer`、`audience`、`accessTokenTtlSeconds` 与账号服务历史值完全一致。
 
-**启动即退出，报 `feign.service_token 未配置`**
-内部认证是网关入口认证的必要依赖，缺失时刻意阻止启动。在 Nacos 补齐 `feign.service_token`。
+**启动即退出，报 `gateway.feign.service_token 未配置`**
+内部认证是网关入口认证的必要依赖，缺失时刻意阻止启动。在 Nacos 补齐 `gateway.feign.service_token`。
 
 **登录成功但访问其他服务返回 401**
-检查 Gateway Nacos 是否配置了 `gateway.auth`、`gateway.routes` 中的 `id: auth` 路由，以及 Gateway 与本服务的 `feign.service_token` 是否一致；业务服务只验签 Gateway 下发的身份上下文。
+检查 Gateway Nacos 是否配置了 `gateway.auth`、`gateway.routes` 中的 `id: auth` 路由，以及 Gateway 与本服务的 `gateway.feign.service_token` 是否一致；业务服务只验签 Gateway 下发的身份上下文。
 
 **所有用户被迫重新登录**
 通常是 `security.session.prefix` 或 `security.jwt.secret` 与迁移前不一致。恢复原值即可，会话数据本身没有丢失。
