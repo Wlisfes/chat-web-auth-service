@@ -1,5 +1,5 @@
 import { randomUUID, timingSafeEqual } from 'node:crypto'
-import { BadRequestException, Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable, Logger } from '@nestjs/common'
 import { RedisService } from '@wlisfes/chat-web-base-schema/redis'
 import { create } from 'svg-captcha'
 import { isEmpty } from 'class-validator'
@@ -9,6 +9,7 @@ export const AUTH_CAPTCHA_COOKIE = 'chat-web-account-captcha'
 
 @Injectable()
 export class CaptchaService {
+    private readonly logger = new Logger(CaptchaService.name)
     /** Redis 键前缀沿用账号服务实现，迁移期间两侧读取同一批验证码。 */
     private readonly keyPrefix = 'chat-web:account:captcha'
     public readonly expiresIn = 180
@@ -25,7 +26,11 @@ export class CaptchaService {
             inverse,
             noise: 2
         })
-        await this.redisService.setEx(this.getKey(sid), this.expiresIn, captcha.text.toUpperCase())
+        const value = captcha.text.toUpperCase()
+        const key = this.getKey(sid)
+        await this.redisService.setEx(key, this.expiresIn, value)
+        // 图形验证码是一次性排障信息，记录 Redis 键和值便于本地登录问题定位；密码和令牌不会写入此日志。
+        this.logger.log(`图形验证码已写入 Redis：key=${key}, value=${value}, expiresIn=${this.expiresIn}s`)
         return { sid, svg: captcha.data }
     }
 
