@@ -21,7 +21,7 @@ test('公开认证路由保持前端约定的路径与方法', () => {
     assert.deepEqual(routeOf(AuthController, 'httpBaseAuthLoginToken'), { path: 'token/login', method: RequestMethod.POST })
     assert.deepEqual(routeOf(AuthController, 'httpBaseAuthContinueToken'), { path: 'token/continue', method: RequestMethod.POST })
     assert.deepEqual(routeOf(AuthController, 'httpBaseAuthLogoutToken'), { path: 'token/logout', method: RequestMethod.POST })
-    assert.deepEqual(routeOf(AuthController, 'httpBaseAuthResolverToken'), { path: 'token/resolver', method: RequestMethod.GET })
+    assert.deepEqual(routeOf(AuthController, 'httpBaseAuthResolverToken'), { path: 'token/resolve', method: RequestMethod.GET })
 })
 
 test('验证码和登录是公开路由，续期、登出与身份解析需要访问令牌', () => {

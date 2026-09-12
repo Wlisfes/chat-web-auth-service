@@ -79,7 +79,7 @@ export class AuthController {
         return this.authService.httpBaseAuthLogoutToken(principal)
     }
 
-    @ApiServiceDecorator(Get('token/resolver'), {
+    @ApiServiceDecorator(Get('token/resolve'), {
         operation: { summary: '获取当前登录身份' },
         response: { type: AccountUserResponseDto, description: '当前登录账号信息' },
         bearerAuth: true
