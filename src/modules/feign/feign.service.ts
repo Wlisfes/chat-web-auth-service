@@ -4,6 +4,9 @@ import {
     AuthPermissionCacheInvalidateResult,
     AuthPermissionCheckInput,
     AuthPermissionCheckResult,
+    AuthDataScopeInput,
+    AuthDataScopeResult,
+    AuthSuperAdminResult,
     FeignClientAuthImplementation,
     FeignClientAuthManager
 } from '@wlisfes/chat-web-base-schema/feign'
@@ -29,5 +32,13 @@ export class FeignService extends FeignClientAuthManager implements FeignClientA
     ): Promise<AuthPermissionCacheInvalidateResult> {
         await this.permissionService.invalidateCache(input)
         return { success: true }
+    }
+
+    public override async resolveDataScope(_authorization: string, input: AuthDataScopeInput): Promise<AuthDataScopeResult> {
+        return this.permissionService.resolveDataScope(input.uid, input.resourceCode)
+    }
+
+    public override async checkSuperAdmin(_authorization: string, input: { uid: string }): Promise<AuthSuperAdminResult> {
+        return { superAdmin: await this.permissionService.isSuperAdmin(input.uid) }
     }
 }
