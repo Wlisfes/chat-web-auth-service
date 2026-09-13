@@ -6,7 +6,8 @@ import type { Request, Response } from 'express'
 import { AuthService } from '@/modules/auth/auth.service'
 import { AUTH_CAPTCHA_COOKIE } from '@/modules/auth/captcha.service'
 import { CodexWriteQueryDto, LoginDto } from '@/modules/auth/dto/login.dto'
-import { AccessTokenResponseDto, AccountUserResponseDto, LoginResponseDto } from '@/dto/api-response.dto'
+import { AccessTokenResponseDto, AccountUserResponseDto, LoginResponseDto, PermissionAccessResponseDto } from '@/dto/api-response.dto'
+import { PermissionService } from '@/modules/permission/permission.service'
 
 /**
  * 认证接口控制器。
@@ -16,7 +17,16 @@ import { AccessTokenResponseDto, AccountUserResponseDto, LoginResponseDto } from
  */
 @ApifoxController('身份认证')
 export class AuthController {
-    constructor(private readonly authService: AuthService) {}
+    constructor(private readonly authService: AuthService, private readonly permissionService: PermissionService) {}
+
+    @ApiServiceDecorator(Get('permission/resolve'), {
+        operation: { summary: '获取当前用户角色、权限码和菜单树' },
+        response: { type: PermissionAccessResponseDto, description: '当前用户有效权限' },
+        bearerAuth: true
+    })
+    public async httpBaseAuthResolvePermission(@CurrentPrincipal() principal: AuthPrincipal) {
+        return this.permissionService.resolveAccess(principal.uid)
+    }
 
     @Public()
     @ApiServiceDecorator(Get('codex/write'), {

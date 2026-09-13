@@ -18,6 +18,7 @@ import {
 } from '@wlisfes/chat-web-base-schema/chat-web-account-mysql'
 import { RedisService } from '@wlisfes/chat-web-base-schema/redis'
 import { In, Repository } from 'typeorm'
+import { buildTree } from '@wlisfes/chat-web-base-schema/utils'
 
 const CACHE_SECONDS = 60
 
@@ -44,6 +45,34 @@ export class PermissionService {
         const cached = await this.redis.get(cacheKey)
         const permissions = cached ? (JSON.parse(cached) as string[]) : await this.loadPermissions(input.uid, cacheKey)
         return codes.every(code => permissions.includes(code))
+    }
+
+    /** 返回当前用户启用角色、权限码和菜单树。 */
+    public async resolveAccess(uid: string): Promise<{ superAdmin: boolean; roleCodes: string[]; permissionCodes: string[]; menuTree: unknown[] }> {
+        const links = await this.userRoleRepository.find({ where: { userUid: uid } })
+        const roles = links.length
+            ? await this.roleRepository.find({ where: { keyId: In(links.map(item => item.roleKeyId)), status: TbAccountRoleStatus.ENABLED } })
+            : []
+        const allMenus = await this.menuRepository.find({ where: { status: TbAccountMenuStatus.ENABLED }, order: { sort: 'ASC', keyId: 'ASC' } })
+        const superAdmin = roles.some(role => role.code === 'super_admin')
+        const menuIds = superAdmin
+            ? allMenus.map(menu => menu.keyId)
+            : (await this.roleMenuRepository.find({ where: { roleKeyId: In(roles.map(role => role.keyId)) } })).map(item => item.menuKeyId)
+        const selected = allMenus.filter(menu => menuIds.includes(menu.keyId))
+        const selectedIds = new Set(selected.map(menu => menu.keyId))
+        selected.forEach(menu => {
+            let parent = menu.parentKeyId
+            while (parent) {
+                selectedIds.add(parent)
+                parent = allMenus.find(item => item.keyId === parent)?.parentKeyId
+            }
+        })
+        return {
+            superAdmin,
+            roleCodes: roles.map(role => role.code).sort(),
+            permissionCodes: [...new Set(selected.map(menu => menu.permissionCode).filter((value): value is string => Boolean(value?.trim())))].sort(),
+            menuTree: buildTree(allMenus.filter(menu => selectedIds.has(menu.keyId)))
+        }
     }
 
     /** 判断用户是否为启用的超级管理员。 */

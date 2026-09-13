@@ -65,3 +65,18 @@ export class LoginResponseDto extends AccessTokenResponseDto {
 
 /** 当前登录账号资料；鉴权服务只读取账号表，不返回密码摘要。 */
 export class AccountUserResponseDto extends OmitType(TbAccountUserDto, ['password'] as const) {}
+
+/** 当前用户有效权限。 */
+export class PermissionAccessResponseDto {
+    @ApiProperty({ description: '是否为超级管理员', example: false })
+    superAdmin: boolean
+
+    @ApiProperty({ description: '启用角色编码', type: [String], example: ['sales_manager'] })
+    roleCodes: string[]
+
+    @ApiProperty({ description: '有效权限码', type: [String], example: ['account:user:list'] })
+    permissionCodes: string[]
+
+    @ApiProperty({ description: '当前用户可访问的菜单树', type: [Object] })
+    menuTree: object[]
+}
