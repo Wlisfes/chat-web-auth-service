@@ -11,6 +11,8 @@ import { AppService } from '@/app.service'
 import { AuthModule } from '@/modules/auth/auth.module'
 import { DatabaseModule } from '@/modules/database/database.module'
 import { HealthModule } from '@/modules/health/health.module'
+import { FeignModule } from '@/modules/feign/feign.module'
+import { PermissionModule } from '@/modules/permission/permission.module'
 
 @Module({
     imports: [
@@ -25,6 +27,8 @@ import { HealthModule } from '@/modules/health/health.module'
         // 自身的公开接口同样经网关进入，因此也只校验网关签发的身份上下文签名。
         GatewayPrincipalModule,
         AuthModule,
+        PermissionModule,
+        FeignModule,
         HealthModule
     ],
     controllers: [AppController],
