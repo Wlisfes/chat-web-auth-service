@@ -15,6 +15,7 @@ import { PermissionService } from '@/modules/permission/permission.service'
  * 服务名称段由网关的 `/api/auth` 路由承担，控制器只声明业务资源路径，
  * 因此这里不再重复 `auth` 前缀，否则经网关转发后会变成 `/auth/token/login`。
  */
+/** 认证与权限解析统一由 Auth 服务提供，网关通过 /api/auth 转发。 */
 @ApifoxController('身份认证')
 export class AuthController {
     constructor(private readonly authService: AuthService, private readonly permissionService: PermissionService) {}
