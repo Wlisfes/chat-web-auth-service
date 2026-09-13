@@ -18,7 +18,10 @@ import { PermissionService } from '@/modules/permission/permission.service'
 /** 认证与权限解析统一由 Auth 服务提供，网关通过 /api/auth 转发。 */
 @ApifoxController('身份认证')
 export class AuthController {
-    constructor(private readonly authService: AuthService, private readonly permissionService: PermissionService) {}
+    constructor(
+        private readonly authService: AuthService,
+        private readonly permissionService: PermissionService
+    ) {}
 
     @ApiServiceDecorator(Get('permission/resolve'), {
         operation: { summary: '获取当前用户角色、权限码和菜单树' },

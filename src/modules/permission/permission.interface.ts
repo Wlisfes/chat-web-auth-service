@@ -1,4 +1,3 @@
-
 export interface EffectiveDataScope {
     all: boolean
     includeSelf: boolean

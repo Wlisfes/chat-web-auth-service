@@ -31,9 +31,11 @@ export class PermissionService {
         @InjectRepository(TbAccountMenu) private readonly menuRepository: Repository<TbAccountMenu>,
         @InjectRepository(TbAccountRoleMenu) private readonly roleMenuRepository: Repository<TbAccountRoleMenu>,
         @InjectRepository(TbAccountRoleDataScope) private readonly dataScopeRepository: Repository<TbAccountRoleDataScope>,
-        @InjectRepository(TbAccountRoleDataScopeOrganization) private readonly dataScopeOrganizationRepository: Repository<TbAccountRoleDataScopeOrganization>,
+        @InjectRepository(TbAccountRoleDataScopeOrganization)
+        private readonly dataScopeOrganizationRepository: Repository<TbAccountRoleDataScopeOrganization>,
         @InjectRepository(TbAccountUserOrganization) private readonly userOrganizationRepository: Repository<TbAccountUserOrganization>,
-        @InjectRepository(TbAccountOrganizationClosure) private readonly organizationClosureRepository: Repository<TbAccountOrganizationClosure>,
+        @InjectRepository(TbAccountOrganizationClosure)
+        private readonly organizationClosureRepository: Repository<TbAccountOrganizationClosure>,
         private readonly redis: RedisService
     ) {}
 
@@ -48,12 +50,19 @@ export class PermissionService {
     }
 
     /** 返回当前用户启用角色、权限码和菜单树。 */
-    public async resolveAccess(uid: string): Promise<{ superAdmin: boolean; roleCodes: string[]; permissionCodes: string[]; menuTree: unknown[] }> {
+    public async resolveAccess(
+        uid: string
+    ): Promise<{ superAdmin: boolean; roleCodes: string[]; permissionCodes: string[]; menuTree: unknown[] }> {
         const links = await this.userRoleRepository.find({ where: { userUid: uid } })
         const roles = links.length
-            ? await this.roleRepository.find({ where: { keyId: In(links.map(item => item.roleKeyId)), status: TbAccountRoleStatus.ENABLED } })
+            ? await this.roleRepository.find({
+                  where: { keyId: In(links.map(item => item.roleKeyId)), status: TbAccountRoleStatus.ENABLED }
+              })
             : []
-        const allMenus = await this.menuRepository.find({ where: { status: TbAccountMenuStatus.ENABLED }, order: { sort: 'ASC', keyId: 'ASC' } })
+        const allMenus = await this.menuRepository.find({
+            where: { status: TbAccountMenuStatus.ENABLED },
+            order: { sort: 'ASC', keyId: 'ASC' }
+        })
         const superAdmin = roles.some(role => role.code === 'super_admin')
         const menuIds = superAdmin
             ? allMenus.map(menu => menu.keyId)
@@ -70,7 +79,9 @@ export class PermissionService {
         return {
             superAdmin,
             roleCodes: roles.map(role => role.code).sort(),
-            permissionCodes: [...new Set(selected.map(menu => menu.permissionCode).filter((value): value is string => Boolean(value?.trim())))].sort(),
+            permissionCodes: [
+                ...new Set(selected.map(menu => menu.permissionCode).filter((value): value is string => Boolean(value?.trim())))
+            ].sort(),
             menuTree: buildTree(allMenus.filter(menu => selectedIds.has(menu.keyId)))
         }
     }
@@ -79,37 +90,58 @@ export class PermissionService {
     public async isSuperAdmin(uid: string): Promise<boolean> {
         const links = await this.userRoleRepository.find({ where: { userUid: uid } })
         if (!links.length) return false
-        const roles = await this.roleRepository.find({ where: { keyId: In(links.map(item => item.roleKeyId)), status: TbAccountRoleStatus.ENABLED } })
+        const roles = await this.roleRepository.find({
+            where: { keyId: In(links.map(item => item.roleKeyId)), status: TbAccountRoleStatus.ENABLED }
+        })
         return roles.some(role => role.code === 'super_admin')
     }
 
     /** 计算用户对业务资源的数据范围。 */
-    public async resolveDataScope(uid: string, resourceCode: string): Promise<{ all: boolean; includeSelf: boolean; organizationKeyIds: number[] }> {
+    public async resolveDataScope(
+        uid: string,
+        resourceCode: string
+    ): Promise<{ all: boolean; includeSelf: boolean; organizationKeyIds: number[] }> {
         if (await this.isSuperAdmin(uid)) return { all: true, includeSelf: true, organizationKeyIds: [] }
         const links = await this.userRoleRepository.find({ where: { userUid: uid } })
-        const roles = await this.roleRepository.find({ where: { keyId: In(links.map(item => item.roleKeyId)), status: TbAccountRoleStatus.ENABLED } })
+        const roles = await this.roleRepository.find({
+            where: { keyId: In(links.map(item => item.roleKeyId)), status: TbAccountRoleStatus.ENABLED }
+        })
         if (!roles.length) return { all: false, includeSelf: false, organizationKeyIds: [] }
-        const scopes = await this.dataScopeRepository.find({ where: { roleKeyId: In(roles.map(item => item.keyId)), resourceCode: In([resourceCode.trim(), '*']), status: TbAccountRoleDataScopeStatus.ENABLED } })
+        const scopes = await this.dataScopeRepository.find({
+            where: {
+                roleKeyId: In(roles.map(item => item.keyId)),
+                resourceCode: In([resourceCode.trim(), '*']),
+                status: TbAccountRoleDataScopeStatus.ENABLED
+            }
+        })
         const selected = roles.flatMap(role => {
             const own = scopes.filter(scope => scope.roleKeyId === role.keyId)
             const exact = own.find(scope => scope.resourceCode === resourceCode.trim())
             return exact ? [exact] : own.filter(scope => scope.resourceCode === '*')
         })
-        if (selected.some(scope => scope.scopeType === TbAccountRoleDataScopeType.ALL)) return { all: true, includeSelf: true, organizationKeyIds: [] }
+        if (selected.some(scope => scope.scopeType === TbAccountRoleDataScopeType.ALL))
+            return { all: true, includeSelf: true, organizationKeyIds: [] }
         const includeSelf = selected.some(scope => scope.scopeType === TbAccountRoleDataScopeType.SELF)
         const organizationKeyIds = new Set<number>()
-        const primary = await this.userOrganizationRepository.find({ where: { userUid: uid, isPrimary: true, status: TbAccountUserOrganizationStatus.ENABLED } })
+        const primary = await this.userOrganizationRepository.find({
+            where: { userUid: uid, isPrimary: true, status: TbAccountUserOrganizationStatus.ENABLED }
+        })
         const primaryIds = primary.map(item => item.organizationKeyId)
-        if (selected.some(scope => scope.scopeType === TbAccountRoleDataScopeType.ORGANIZATION)) primaryIds.forEach(id => organizationKeyIds.add(id))
+        if (selected.some(scope => scope.scopeType === TbAccountRoleDataScopeType.ORGANIZATION))
+            primaryIds.forEach(id => organizationKeyIds.add(id))
         if (selected.some(scope => scope.scopeType === TbAccountRoleDataScopeType.ORGANIZATION_TREE)) {
             const rows = await this.organizationClosureRepository.find({ where: { ancestorKeyId: In(primaryIds) } })
             rows.forEach(row => organizationKeyIds.add(row.descendantKeyId))
         }
         const custom = selected.filter(scope => scope.scopeType === TbAccountRoleDataScopeType.CUSTOM)
         if (custom.length) {
-            const grants = await this.dataScopeOrganizationRepository.find({ where: { dataScopeKeyId: In(custom.map(scope => scope.keyId)) } })
+            const grants = await this.dataScopeOrganizationRepository.find({
+                where: { dataScopeKeyId: In(custom.map(scope => scope.keyId)) }
+            })
             grants.filter(item => !item.includeChildren).forEach(item => organizationKeyIds.add(item.organizationKeyId))
-            const rows = await this.organizationClosureRepository.find({ where: { ancestorKeyId: In(grants.filter(item => item.includeChildren).map(item => item.organizationKeyId)) } })
+            const rows = await this.organizationClosureRepository.find({
+                where: { ancestorKeyId: In(grants.filter(item => item.includeChildren).map(item => item.organizationKeyId)) }
+            })
             rows.forEach(row => organizationKeyIds.add(row.descendantKeyId))
         }
         return { all: false, includeSelf, organizationKeyIds: [...organizationKeyIds].sort((a, b) => a - b) }

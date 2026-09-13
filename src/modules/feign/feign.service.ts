@@ -19,10 +19,7 @@ export class FeignService extends FeignClientAuthManager implements FeignClientA
         super()
     }
 
-    public override async checkPermission(
-        _authorization: string,
-        input: AuthPermissionCheckInput
-    ): Promise<AuthPermissionCheckResult> {
+    public override async checkPermission(_authorization: string, input: AuthPermissionCheckInput): Promise<AuthPermissionCheckResult> {
         return { allowed: await this.permissionService.checkPermission(input) }
     }
 

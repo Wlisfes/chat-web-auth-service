@@ -1,4 +1,3 @@
-
 export interface RoleIdentity {
     keyId: number
 }
