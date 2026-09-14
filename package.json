@@ -6,8 +6,8 @@
     "private": true,
     "license": "UNLICENSED",
     "scripts": {
-        "install": "yarn install --ignore-scripts",
-        "base:update": "yarn upgrade @wlisfes/chat-web-base-schema --latest",
+        "install": "node scripts/yarn-auth.cjs install --ignore-scripts",
+        "base:update": "node scripts/yarn-auth.cjs upgrade @wlisfes/chat-web-base-schema --latest",
         "build": "nest build",
         "format": "prettier --write \"src/**/*.ts\" \"test/**/*.cjs\" \"scripts/**/*.cjs\" \".github/workflows/*.yml\"",
         "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.cjs\" \"scripts/**/*.cjs\" \".github/workflows/*.yml\"",
