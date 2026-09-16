@@ -16,6 +16,15 @@
 | 健康检查 | `/health/live`（容器探针）、`/health/ready`（依赖就绪） |
 | 网关前缀 | `/api/auth` |
 
+## 同机 Nacos 注册地址
+
+`chat-home-server` 上的 Auth 与 Gateway 在同一台机器、同一 Docker 网络。生产 **禁止** 设置 `NACOS_REGISTER_IP=10.66.0.2`。
+
+2026-09-17 P0：强制注册 WireGuard 地址后，`10.66.0.2:5050` 超时，同机 Gateway `/api/auth/health` 与验证码入口失败。Docker Desktop 不会把已发布端口映射到 WG 网卡。正确做法是不设 `NACOS_REGISTER_IP`，注册容器网卡 IP。公网走 Nginx `80/443` → Gateway。跨服务事故主记录见 Gateway `deploy/RUNBOOK.md`。
+
+不要把 `10.66.0.2` 写回 Auth 生产 `.env`。验证时同时检查 `/api/auth/health` 和 `/api/auth/codex/write`。
+
+
 ## Nacos 配置清单
 
 Data ID `chat-web-auth-service.yaml`（`DEFAULT_GROUP`）：
