@@ -1,5 +1,14 @@
 # 部署变更记录
 
+## 2026-09-16：发布 v1.0.0，内省接口返回工号和姓名
+
+- 影响机器：`chat-home-server`。
+- 关联版本：Auth `v1.0.0`；`@wlisfes/chat-web-base-schema@1.6.31`。
+- 变更内容：内部令牌内省接口返回不可变字段 `number`、`name`，与 `uid`、`sessionId` 一并作为网关身份主体。升级共享包到 `1.6.31`。无需修改 `.env`、Nacos、端口或健康检查。
+- 机器侧操作：按现有流水线切换 SHA 镜像即可。必须先于 Gateway 部署，否则新网关会拒绝缺少工号/姓名的内省结果。
+- 验证命令：`yarn typecheck`、`yarn test`；部署后检查容器健康，并用服务凭据调用 `/internal/auth/token/introspect` 确认返回 `uid/number/name/sessionId`。
+- 回滚方法：恢复上一完整 Git SHA。
+
 ## 2026-09-09：生产 Nacos 切换为云端域名
 
 - 影响机器：`chat-home-server`。

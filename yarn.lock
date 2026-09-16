@@ -417,7 +417,7 @@
 
 "@opentelemetry/api@^1.9.0":
   version "1.9.1"
-  resolved "https://registry.npmmirror.com/@opentelemetry/api/-/api-1.9.1.tgz#c1b0346de336ba55af2d5a7970882037baedec05"
+  resolved "https://registry.yarnpkg.com/@opentelemetry/api/-/api-1.9.1.tgz#c1b0346de336ba55af2d5a7970882037baedec05"
   integrity sha512-gLyJlPHPZYdAk1JENA9LeHejZe1Ti77/pTeFm/nMXmQH/HFZlcS/O2XJB+L8fkbrNSqhdtlvjBVjxwUYanNH5Q==
 
 "@pkgjs/parseargs@^0.11.0":
@@ -562,7 +562,7 @@
 
 "@types/lodash@^4.17.25":
   version "4.17.25"
-  resolved "https://registry.npmmirror.com/@types/lodash/-/lodash-4.17.25.tgz#69765ac7bcddb0eb072961cf292524a8f5b3c2c0"
+  resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.17.25.tgz#69765ac7bcddb0eb072961cf292524a8f5b3c2c0"
   integrity sha512-+K1NIO8I+F9/wNulfVvu23QYd0Pe9/OCqRrim4NoYIf1VoEDL90Ve4ClzpyqBLc7NpGGWRvYNCKZ1BE/Jpf8dQ==
 
 "@types/node@*":
@@ -606,7 +606,7 @@
 
 "@types/validator@^13.15.3":
   version "13.15.10"
-  resolved "https://registry.npmmirror.com/@types/validator/-/validator-13.15.10.tgz#742b77ec34d58554b94a76a14cef30d59e3c16b9"
+  resolved "https://registry.yarnpkg.com/@types/validator/-/validator-13.15.10.tgz#742b77ec34d58554b94a76a14cef30d59e3c16b9"
   integrity sha512-T8L6i7wCuyoK8A/ZeLYt1+q0ty3Zb9+qbSSvrIVitzT3YjZqkTZ40IbRsPanlB4h1QB3JVL1SYCdR6ngtFYcuA==
 
 "@webassemblyjs/ast@1.14.1", "@webassemblyjs/ast@^1.14.1":
@@ -730,10 +730,10 @@
     "@webassemblyjs/ast" "1.14.1"
     "@xtuc/long" "4.2.2"
 
-"@wlisfes/chat-web-base-schema@1.6.15":
-  version "1.6.15"
-  resolved "https://npm.pkg.github.com/download/@wlisfes/chat-web-base-schema/1.6.15/52d59e5a8b74255979702b9ea799797f2b9e16ee#52d59e5a8b74255979702b9ea799797f2b9e16ee"
-  integrity sha512-fX2I07OILIT2xRhUywav0ml6s6CDAsIh4D+pk2T4YYSb1bunTg5BtutmjLS3w/kVvuoLEkodZn6jgU1MU1gVRA==
+"@wlisfes/chat-web-base-schema@1.6.31":
+  version "1.6.31"
+  resolved "https://npm.pkg.github.com/download/@wlisfes/chat-web-base-schema/1.6.31/6c44d2b39bcd5db6ae83def6be3388a6aa873022#6c44d2b39bcd5db6ae83def6be3388a6aa873022"
+  integrity sha512-ZjzpPdKDWVEhChCzswo296A0eInjIBnxDnTD0PcCbZEzsW9cfNVgglyFVpXVI+LXklFETGIvTcXikJ3BnObYXQ==
   dependencies:
     "@opentelemetry/api" "^1.9.0"
     "@types/lodash" "^4.17.25"
@@ -1293,7 +1293,7 @@ content-type@^2.0.0, content-type@^2.1.0:
 
 cookie-parser@^1.4.7:
   version "1.4.7"
-  resolved "https://registry.npmmirror.com/cookie-parser/-/cookie-parser-1.4.7.tgz#e2125635dfd766888ffe90d60c286404fa0e7b26"
+  resolved "https://registry.yarnpkg.com/cookie-parser/-/cookie-parser-1.4.7.tgz#e2125635dfd766888ffe90d60c286404fa0e7b26"
   integrity sha512-nGUvgXnotP3BsjiLX2ypbQnWoGUPIIfHQNZkkC668ntrzGWEZVW70HDEB1qnNGMicPje6EttlIgzo51YSwNQGw==
   dependencies:
     cookie "0.7.2"
@@ -1301,7 +1301,7 @@ cookie-parser@^1.4.7:
 
 cookie-signature@1.0.6:
   version "1.0.6"
-  resolved "https://registry.npmmirror.com/cookie-signature/-/cookie-signature-1.0.6.tgz#e303a882b342cc3ee8ca513a79999734dab3ae2c"
+  resolved "https://registry.yarnpkg.com/cookie-signature/-/cookie-signature-1.0.6.tgz#e303a882b342cc3ee8ca513a79999734dab3ae2c"
   integrity sha512-QADzlaHc8icV8I7vbaJXJwod9HWYp8uCqf1xa4OfNu1T7JVxQIrUgOWtHdNDtPiywmFbiS12VjotIXLrKM3orQ==
 
 cookie-signature@^1.2.1:
@@ -1358,7 +1358,7 @@ cross-spawn@^7.0.6:
 
 dayjs@^1.11.21:
   version "1.11.23"
-  resolved "https://registry.npmmirror.com/dayjs/-/dayjs-1.11.23.tgz#b0a363506dde5f36cf5075e42ebe8115165a8c79"
+  resolved "https://registry.yarnpkg.com/dayjs/-/dayjs-1.11.23.tgz#b0a363506dde5f36cf5075e42ebe8115165a8c79"
   integrity sha512-QDTCU0M0MxR3hQfnlDJfwekQiaanm1ubOD231u73WBckQ/fsamwRLiE2GBz6D3a/xF1NgfiDLJjXBa1hYOYTtQ==
 
 debug@^2.6.9:
@@ -2136,9 +2136,9 @@ ko-sleep@^1.0.3:
     ms "*"
 
 libphonenumber-js@^1.11.1:
-  version "1.13.12"
-  resolved "https://registry.npmmirror.com/libphonenumber-js/-/libphonenumber-js-1.13.12.tgz#ba5371e954cb07c0498de97afa312d25e93e2241"
-  integrity sha512-uLVeV1c9OTk6qkdqnj+mpMD+ZdnZ0szVyWu58HwMmpwkHA1gCEkyjd3veZQXDnuw9KEwSRjcc9B1pS9XKIN1fA==
+  version "1.13.13"
+  resolved "https://registry.yarnpkg.com/libphonenumber-js/-/libphonenumber-js-1.13.13.tgz#4a7907ff18d4687dd32c7f6f976db7478ac7a898"
+  integrity sha512-hV6SmWnyQ8U1QXhhqbqYBHIStNnscG7A5XbGodgdHhf/8N5PwhYpJA5U/yHDjYwPYTd8uNGXqq416XctuvK2PA==
 
 lines-and-columns@^1.1.6:
   version "1.2.4"
@@ -3391,7 +3391,7 @@ v8-compile-cache-lib@^3.0.1:
 
 validator@^13.15.22:
   version "13.15.35"
-  resolved "https://registry.npmmirror.com/validator/-/validator-13.15.35.tgz#81cf455c51f15b69d8d340be5914f3fab00dbf7f"
+  resolved "https://registry.yarnpkg.com/validator/-/validator-13.15.35.tgz#81cf455c51f15b69d8d340be5914f3fab00dbf7f"
   integrity sha512-TQ5pAGhd5whStmqWvYF4OjQROlmv9SMFVt37qoCBdqRffuuklWYQlCNnEs2ZaIBD1kZRNnikiZOS1eqgkar0iw==
 
 vary@^1, vary@^1.1.2:
