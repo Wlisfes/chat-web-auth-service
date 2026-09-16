@@ -82,7 +82,12 @@ export class AuthService {
     public async httpBaseAuthIntrospectToken(token: string): Promise<AuthPrincipal> {
         const claims = this.tokenService.verifyAccessToken(token)
         await this.sessionService.assertActive(claims)
-        await this.authUtilsService.findActiveUserRequired(claims.sub)
-        return { uid: claims.sub, sessionId: claims.jti }
+        const user = await this.authUtilsService.findActiveUserRequired(claims.sub)
+        return {
+            uid: user.uid,
+            number: user.number,
+            name: user.name,
+            sessionId: claims.jti
+        }
     }
 }
