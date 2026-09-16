@@ -19,6 +19,8 @@ services:
       NODE_ENV: production
       PORT: 5050
       TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      - '${HOST_BIND_IP:-0.0.0.0}:5050:5050'
     expose:
       - '5050'
     extra_hosts:
