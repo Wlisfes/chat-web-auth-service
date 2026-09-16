@@ -76,6 +76,24 @@ while [ "$elapsed" -lt "$HEALTH_TIMEOUT" ]; do
     state=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$CONTAINER" 2>/dev/null || true)
     case "$state" in
         healthy)
+            if ! docker exec "$CONTAINER" node -e "require('http').get('http://127.0.0.1:5050/health/ready', response => process.exit(response.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"; then
+                echo "Auth readiness endpoint failed after the container became healthy." >&2
+                rollback
+                exit 1
+            fi
+            register_ip=$(sed -n 's/^NACOS_REGISTER_IP=//p' .env | tail -n 1 | tr -d '\r')
+            if [ -n "$register_ip" ]; then
+                if ! printf '%s' "$register_ip" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}$'; then
+                    echo "NACOS_REGISTER_IP must be a valid IPv4 address: $register_ip" >&2
+                    rollback
+                    exit 1
+                fi
+                if ! docker exec -e CHECK_IP="$register_ip" chat-web-gateway-service node -e 'fetch("http://" + process.env.CHECK_IP + ":5050/health").then(async response => { const body = await response.text(); console.log("Nacos register IP probe status=" + response.status + " body=" + body); if (response.status !== 200) process.exit(1); }).catch(error => { console.error(String(error)); process.exit(1); })'; then
+                    echo "NACOS_REGISTER_IP=${register_ip}:5050 is not reachable from Gateway. Docker port publishing to the WireGuard address may not work on Windows. Unset NACOS_REGISTER_IP so the service registers the container network IP." >&2
+                    rollback
+                    exit 1
+                fi
+            fi
             echo "Deployment succeeded: $IMAGE"
             trap - HUP INT TERM
             docker image prune -f >/dev/null 2>&1 || true
