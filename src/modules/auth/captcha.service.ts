@@ -2,8 +2,8 @@ import { randomUUID, timingSafeEqual } from 'node:crypto'
 import { BadRequestException, Injectable, Logger } from '@nestjs/common'
 import { RedisService } from '@wlisfes/chat-web-base-schema/redis'
 import { create } from 'svg-captcha'
-import { isEmpty } from 'class-validator'
 
+import { isEmpty } from '@wlisfes/chat-web-base-schema/utils'
 /** Cookie 名称保持与账号服务历史实现一致，避免迁移期间已下发的验证码会话失效。 */
 export const AUTH_CAPTCHA_COOKIE = 'chat-web-account-captcha'
 

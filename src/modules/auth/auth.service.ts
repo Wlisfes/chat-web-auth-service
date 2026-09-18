@@ -1,21 +1,20 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
 import { PasswordService, TokenService } from '@wlisfes/chat-web-base-schema/auth'
 import type { AuthPrincipal } from '@wlisfes/chat-web-base-schema/auth'
 import { AuthSessionService } from '@wlisfes/chat-web-base-schema/auth-session'
-import { TbAccountUser } from '@wlisfes/chat-web-base-schema/chat-web-account-mysql'
 import { SuccessResponseDataDto } from '@wlisfes/chat-web-base-schema/decorator'
-import { isEmpty, isNotEmpty } from 'class-validator'
-import { Repository } from 'typeorm'
 import { AccessTokenResponseDto, AccountUserResponseDto, LoginResponseDto } from '@/dto/api-response.dto'
 import { AuthUtilsService } from '@/modules/auth/auth.utils.service'
 import { CaptchaService } from '@/modules/auth/captcha.service'
 import * as AuthDto from '@/modules/auth/dto/login.dto'
+import * as Schema from '@wlisfes/chat-web-base-schema'
 
+import { InjectRepository, Repository } from '@wlisfes/chat-web-base-schema/database'
+import { isEmpty, isNotEmpty } from '@wlisfes/chat-web-base-schema/utils'
 @Injectable()
 export class AuthService {
     constructor(
-        @InjectRepository(TbAccountUser) private readonly userRepository: Repository<TbAccountUser>,
+        @InjectRepository(Schema.TbAccountUser) private readonly userRepository: Repository<Schema.TbAccountUser>,
         private readonly passwordService: PasswordService,
         private readonly tokenService: TokenService,
         private readonly sessionService: AuthSessionService,
