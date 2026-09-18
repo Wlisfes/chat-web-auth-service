@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import type { AuthPermissionCacheInvalidateInput, AuthPermissionCheckInput } from '@wlisfes/chat-web-base-schema/feign'
+import type {
+    AuthAuthorizedPrincipalResult,
+    AuthPermissionCacheInvalidateInput,
+    AuthPermissionCheckInput
+} from '@wlisfes/chat-web-base-schema/feign'
 import {
     TbAccountMenu,
     TbAccountMenuStatus,
@@ -96,6 +100,22 @@ export class PermissionService {
         return roles.some(role => role.code === 'super_admin')
     }
 
+    /** 计算当前请求的授权身份与可访问用户 UID 并集。 */
+    public async resolveAuthorizedPrincipal(uid: string, permissionCodes: string[]): Promise<AuthAuthorizedPrincipalResult> {
+        const codes = [...new Set(permissionCodes.map(code => code.trim()).filter(Boolean))].sort()
+        const cacheKey = `auth:authorized:${uid}:${codes.join(',')}`
+        const cached = await this.redis.get(cacheKey)
+        if (cached) return JSON.parse(cached) as AuthAuthorizedPrincipalResult
+        const result = await this.computeAuthorizedPrincipal(uid, codes)
+        await this.redis.setEx(cacheKey, CACHE_SECONDS, JSON.stringify(result))
+        const indexKey = `auth:authorized:index:${uid}`
+        const indexed = await this.redis.get(indexKey)
+        const keys = new Set(indexed ? (JSON.parse(indexed) as string[]) : [])
+        keys.add(cacheKey)
+        await this.redis.setEx(indexKey, CACHE_SECONDS, JSON.stringify([...keys]))
+        return result
+    }
+
     /** 计算用户对业务资源的数据范围。 */
     public async resolveDataScope(
         uid: string,
@@ -158,7 +178,94 @@ export class PermissionService {
             const relations = await this.userRoleRepository.find({ where: { roleKeyId: In(input.roleKeyIds) } })
             relations.forEach(item => uids.add(item.userUid))
         }
-        await Promise.all([...uids].map(uid => this.redis.del(`auth:permission:${uid}`)))
+        await Promise.all(
+            [...uids].map(async uid => {
+                const indexKey = `auth:authorized:index:${uid}`
+                const indexed = await this.redis.get(indexKey)
+                const keys = indexed ? (JSON.parse(indexed) as string[]) : []
+                await Promise.all([
+                    this.redis.del(`auth:permission:${uid}`),
+                    this.redis.del(indexKey),
+                    ...keys.map(key => this.redis.del(key))
+                ])
+            })
+        )
+    }
+
+    private async computeAuthorizedPrincipal(uid: string, codes: string[]): Promise<AuthAuthorizedPrincipalResult> {
+        const links = await this.userRoleRepository.find({ where: { userUid: uid } })
+        const roles = links.length
+            ? await this.roleRepository.find({
+                  where: { keyId: In(links.map(item => item.roleKeyId)), status: TbAccountRoleStatus.ENABLED }
+              })
+            : []
+        const roleCodes = roles.map(role => role.code).sort()
+        const superAdmin = roles.some(role => role.code === 'super_admin')
+        if (superAdmin) return { superAdmin: true, roleCodes, all: true, items: [] }
+        const self = { superAdmin: false, roleCodes, all: false, items: [uid] }
+        if (!roles.length || codes.length === 0) return self
+        const roleMenus = await this.roleMenuRepository.find({ where: { roleKeyId: In(roles.map(role => role.keyId)) } })
+        if (!roleMenus.length) return self
+        const menus = await this.menuRepository.find({
+            where: { keyId: In(roleMenus.map(item => item.menuKeyId)), status: TbAccountMenuStatus.ENABLED }
+        })
+        const allowed = new Set(codes)
+        const menuCodes = new Map(menus.map(menu => [menu.keyId, menu.permissionCode?.trim() ?? '']))
+        const relatedRoleIds = [
+            ...new Set(roleMenus.filter(item => allowed.has(menuCodes.get(item.menuKeyId) ?? '')).map(item => item.roleKeyId))
+        ]
+        if (!relatedRoleIds.length) return self
+        const scopes = await this.dataScopeRepository.find({
+            where: { roleKeyId: In(relatedRoleIds), status: TbAccountRoleDataScopeStatus.ENABLED }
+        })
+        if (!scopes.length) return self
+        if (scopes.some(scope => scope.scopeType === TbAccountRoleDataScopeType.ALL)) {
+            return { superAdmin: false, roleCodes, all: true, items: [] }
+        }
+        const items = new Set<string>()
+        if (scopes.some(scope => scope.scopeType === TbAccountRoleDataScopeType.SELF)) items.add(uid)
+        const organizationKeyIds = new Set<number>()
+        const needPrimary = scopes.some(
+            scope =>
+                scope.scopeType === TbAccountRoleDataScopeType.ORGANIZATION ||
+                scope.scopeType === TbAccountRoleDataScopeType.ORGANIZATION_TREE
+        )
+        const primaryIds = needPrimary
+            ? (
+                  await this.userOrganizationRepository.find({
+                      where: { userUid: uid, isPrimary: true, status: TbAccountUserOrganizationStatus.ENABLED }
+                  })
+              ).map(item => item.organizationKeyId)
+            : []
+        if (scopes.some(scope => scope.scopeType === TbAccountRoleDataScopeType.ORGANIZATION)) {
+            primaryIds.forEach(id => organizationKeyIds.add(id))
+        }
+        if (primaryIds.length && scopes.some(scope => scope.scopeType === TbAccountRoleDataScopeType.ORGANIZATION_TREE)) {
+            const rows = await this.organizationClosureRepository.find({ where: { ancestorKeyId: In(primaryIds) } })
+            rows.forEach(row => organizationKeyIds.add(row.descendantKeyId))
+        }
+        const custom = scopes.filter(scope => scope.scopeType === TbAccountRoleDataScopeType.CUSTOM)
+        if (custom.length) {
+            const grants = await this.dataScopeOrganizationRepository.find({
+                where: { dataScopeKeyId: In(custom.map(scope => scope.keyId)) }
+            })
+            grants.filter(item => !item.includeChildren).forEach(item => organizationKeyIds.add(item.organizationKeyId))
+            const childIds = grants.filter(item => item.includeChildren).map(item => item.organizationKeyId)
+            if (childIds.length) {
+                const rows = await this.organizationClosureRepository.find({ where: { ancestorKeyId: In(childIds) } })
+                rows.forEach(row => organizationKeyIds.add(row.descendantKeyId))
+            }
+        }
+        if (organizationKeyIds.size) {
+            const members = await this.userOrganizationRepository.find({
+                where: {
+                    organizationKeyId: In([...organizationKeyIds]),
+                    status: TbAccountUserOrganizationStatus.ENABLED
+                }
+            })
+            members.forEach(item => items.add(item.userUid))
+        }
+        return { superAdmin: false, roleCodes, all: false, items: [...items].sort() }
     }
 
     private async loadPermissions(uid: string, cacheKey: string): Promise<string[]> {

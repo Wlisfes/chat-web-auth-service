@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import {
+    AuthAuthorizedPrincipalResult,
     AuthPermissionCacheInvalidateInput,
     AuthPermissionCacheInvalidateResult,
     AuthPermissionCheckInput,
@@ -37,5 +38,12 @@ export class FeignService extends FeignClientAuthManager implements FeignClientA
 
     public override async checkSuperAdmin(_authorization: string, input: { uid: string }): Promise<AuthSuperAdminResult> {
         return { superAdmin: await this.permissionService.isSuperAdmin(input.uid) }
+    }
+
+    public override async resolveAuthorizedPrincipal(
+        _authorization: string,
+        input: AuthPermissionCheckInput
+    ): Promise<AuthAuthorizedPrincipalResult> {
+        return this.permissionService.resolveAuthorizedPrincipal(input.uid, input.permissionCodes)
     }
 }
