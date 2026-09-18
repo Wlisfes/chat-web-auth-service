@@ -1,6 +1,6 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common'
 import { ServiceLivenessResponseDto, ServiceReadinessResponseDto } from '@/dto/api-response.dto'
-import { HealthService } from '@/modules/health/health.service'
+import { HealthService } from '@/health/health.service'
 
 @Injectable()
 export class AppService {

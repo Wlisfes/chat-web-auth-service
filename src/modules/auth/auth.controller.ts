@@ -5,9 +5,9 @@ import { ApiServiceDecorator, ApifoxController, SuccessResponseDataDto } from '@
 import type { Request, Response } from 'express'
 import { AuthService } from '@/modules/auth/auth.service'
 import { AUTH_CAPTCHA_COOKIE } from '@/modules/auth/captcha.service'
-import { CodexWriteQueryDto, LoginDto } from '@/modules/auth/dto/login.dto'
 import { AccessTokenResponseDto, AccountUserResponseDto, LoginResponseDto, PermissionAccessResponseDto } from '@/dto/api-response.dto'
 import { PermissionService } from '@/modules/permission/permission.service'
+import * as AuthDto from '@/modules/auth/dto/login.dto'
 
 /**
  * 认证接口控制器。
@@ -35,7 +35,7 @@ export class AuthController {
     @Public()
     @ApiServiceDecorator(Get('codex/write'), {
         operation: { summary: '获取图形验证码' },
-        request: { source: 'query', type: CodexWriteQueryDto },
+        request: { source: 'query', type: AuthDto.CodexWriteQueryDto },
         response: {
             envelope: false,
             contentType: 'image/svg+xml',
@@ -43,7 +43,7 @@ export class AuthController {
             description: 'SVG 图形验证码'
         }
     })
-    public async httpBaseAuthWriteCodex(@Req() request: Request, @Res() response: Response, @Query() query: CodexWriteQueryDto) {
+    public async httpBaseAuthWriteCodex(@Req() request: Request, @Res() response: Response, @Query() query: AuthDto.CodexWriteQueryDto) {
         const captcha = await this.authService.httpBaseAuthWriteCodex(query)
         response.cookie(AUTH_CAPTCHA_COOKIE, captcha.sid, {
             httpOnly: true,
@@ -64,10 +64,14 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @ApiServiceDecorator(Post('token/login'), {
         operation: { summary: '使用工号、手机号或邮箱登录' },
-        request: { source: 'body', type: LoginDto },
+        request: { source: 'body', type: AuthDto.LoginDto },
         response: { type: LoginResponseDto, description: '登录成功并返回 Bearer Token' }
     })
-    public async httpBaseAuthLoginToken(@Req() request: Request, @Res({ passthrough: true }) response: Response, @Body() input: LoginDto) {
+    public async httpBaseAuthLoginToken(
+        @Req() request: Request,
+        @Res({ passthrough: true }) response: Response,
+        @Body() input: AuthDto.LoginDto
+    ) {
         const result = await this.authService.httpBaseAuthLoginToken(input, this.getCookie(request, AUTH_CAPTCHA_COOKIE))
         response.clearCookie(AUTH_CAPTCHA_COOKIE, { path: '/' })
         return result

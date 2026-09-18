@@ -1,7 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
-import { isNotEmpty, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Length, MaxLength, Min, ValidateIf } from 'class-validator'
+import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Length, MaxLength, Min, ValidateIf } from 'class-validator'
 
+import { isNotEmpty } from '@wlisfes/chat-web-base-schema/utils'
 export class CodexWriteQueryDto {
     @ApiPropertyOptional({ description: '是否使用反色验证码；1 表示启用，0 表示关闭', enum: ['0', '1'], default: '0', example: '0' })
     @IsOptional()

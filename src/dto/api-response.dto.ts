@@ -1,5 +1,5 @@
 import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
-import { TbAccountUserDto } from '@wlisfes/chat-web-base-schema/chat-web-account-mysql'
+import * as Schema from '@wlisfes/chat-web-base-schema'
 
 export class ServiceLivenessResponseDto {
     @ApiProperty({ description: '服务状态', enum: ['UP'], example: 'UP' })
@@ -45,7 +45,7 @@ export class ServiceReadinessResponseDto {
     security: ServiceSecurityResponseDto
 }
 
-export class LoginUserResponseDto extends PickType(TbAccountUserDto, ['uid', 'number', 'name', 'avatar'] as const) {}
+export class LoginUserResponseDto extends PickType(Schema.TbAccountUserDto, ['uid', 'number', 'name', 'avatar'] as const) {}
 
 export class AccessTokenResponseDto {
     @ApiProperty({ description: 'Bearer 访问令牌', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
@@ -64,7 +64,7 @@ export class LoginResponseDto extends AccessTokenResponseDto {
 }
 
 /** 当前登录账号资料；鉴权服务只读取账号表，不返回密码摘要。 */
-export class AccountUserResponseDto extends OmitType(TbAccountUserDto, ['password'] as const) {}
+export class AccountUserResponseDto extends OmitType(Schema.TbAccountUserDto, ['password'] as const) {}
 
 /** 当前用户有效权限。 */
 export class PermissionAccessResponseDto {

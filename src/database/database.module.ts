@@ -1,10 +1,10 @@
 import { Global, Module } from '@nestjs/common'
-import { ConfigModule, ConfigService } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
+import { ConfigModule, ConfigService } from '@nestjs/config'
 import { NacosService } from '@wlisfes/chat-web-base-schema/nacos'
-import { createMysqlOptions, DataBaseService } from '@wlisfes/chat-web-base-schema/database'
-import { AUTH_MYSQL_CONFIG_KEY, AUTH_MYSQL_ENTITIES } from '@/modules/database/database.constants'
+import { AUTH_MYSQL_CONFIG_KEY, AUTH_MYSQL_ENTITIES } from '@/database/database.constants'
 
+import { createMysqlOptions, DataBaseService } from '@wlisfes/chat-web-base-schema/database'
 @Global()
 @Module({
     imports: [

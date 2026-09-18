@@ -1,34 +1,26 @@
 import { Injectable } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import {
-    TbAccountMenu,
-    TbAccountOrganizationClosure,
-    TbAccountRole,
-    TbAccountRoleStatus,
-    TbAccountUserRole
-} from '@wlisfes/chat-web-base-schema/chat-web-account-mysql'
-import { DataBaseService } from '@wlisfes/chat-web-base-schema/database'
-import { In, Repository } from 'typeorm'
+import * as Schema from '@wlisfes/chat-web-base-schema'
 
+import { InjectRepository, DataBaseService, In, Repository } from '@wlisfes/chat-web-base-schema/database'
 @Injectable()
 export class PermissionUtilsService {
     constructor(
-        @InjectRepository(TbAccountRole) private readonly roleRepository: Repository<TbAccountRole>,
-        @InjectRepository(TbAccountOrganizationClosure)
-        private readonly organizationClosureRepository: Repository<TbAccountOrganizationClosure>,
+        @InjectRepository(Schema.TbAccountRole) private readonly roleRepository: Repository<Schema.TbAccountRole>,
+        @InjectRepository(Schema.TbAccountOrganizationClosure)
+        private readonly organizationClosureRepository: Repository<Schema.TbAccountOrganizationClosure>,
         private readonly database: DataBaseService
     ) {}
 
     /**获取账号当前启用的角色*/
-    public async getEnabledRoles(userUid: string): Promise<TbAccountRole[]> {
-        const relations = await this.roleRepository.manager.find(TbAccountUserRole, { where: { userUid } })
+    public async getEnabledRoles(userUid: string): Promise<Schema.TbAccountRole[]> {
+        const relations = await this.roleRepository.manager.find(Schema.TbAccountUserRole, { where: { userUid } })
         if (relations.length === 0) {
             return []
         }
         return this.database.builder(this.roleRepository, qb =>
             qb
                 .where('t.keyId IN (:...roleKeyIds)', { roleKeyIds: relations.map(relation => relation.roleKeyId) })
-                .andWhere('t.status = :status', { status: TbAccountRoleStatus.ENABLED })
+                .andWhere('t.status = :status', { status: Schema.TbAccountRoleStatus.ENABLED })
                 .orderBy('t.sort', 'ASC')
                 .addOrderBy('t.keyId', 'ASC')
                 .getMany()
@@ -36,7 +28,7 @@ export class PermissionUtilsService {
     }
 
     /**补齐授权菜单的全部祖先节点*/
-    public includeMenuAncestors(grantedMenus: TbAccountMenu[], allMenus: TbAccountMenu[]): Set<number> {
+    public includeMenuAncestors(grantedMenus: Schema.TbAccountMenu[], allMenus: Schema.TbAccountMenu[]): Set<number> {
         const byKeyId = new Map(allMenus.map(menu => [menu.keyId, menu]))
         const result = new Set<number>()
         for (const menu of grantedMenus) {

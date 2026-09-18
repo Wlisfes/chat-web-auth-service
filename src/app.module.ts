@@ -9,9 +9,9 @@ import { RedisModule } from '@wlisfes/chat-web-base-schema/redis'
 import { AppController } from '@/app.controller'
 import { AppService } from '@/app.service'
 import { AuthModule } from '@/modules/auth/auth.module'
-import { DatabaseModule } from '@/modules/database/database.module'
-import { HealthModule } from '@/modules/health/health.module'
-import { FeignModule } from '@/modules/feign/feign.module'
+import { DatabaseModule } from '@/database/database.module'
+import { HealthModule } from '@/health/health.module'
+import { FeignModule } from '@/feign/feign.module'
 import { PermissionModule } from '@/modules/permission/permission.module'
 
 @Module({
