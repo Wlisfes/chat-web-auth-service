@@ -121,7 +121,8 @@
 
 - 功能权限码与数据范围资源编码分离。权限码用于 `@RequirePermissions`。
 - 数据范围 `resourceCode` 格式固定为 `chat:{服务}:{资源}`，全小写，例如 `chat:account:user`、`chat:crm:consumer`、`chat:finance:voucher`。`*` 表示默认规则。
-- 查询数据范围必须调用 `AuthorizationService.resolveDataScope(uid, resourceCode)`，禁止把数据范围挂到 `AuthPrincipal`。
+- 只有使用了 `@RequirePermissions` 的接口才会请求 `/feign/auth/permission/authorized-principal`。多个权限码为或关系；传入 `*` 时跳过权限校验，但仍查询当前用户的角色与数据权限。未使用该装饰器的接口不得调用该 Feign。
+- 权限校验通过后，Auth 返回的 `superAdmin`、`roleCodes`、`all`、`items` 由 `AuthorizationGuard` 挂到 `request.user`，业务代码从 `CurrentPrincipal` 读取，不得再调用 `hasPermission` / `isSuperAdmin` / `resolveDataScope`，也不得再请求 `/permission/check`。
 
 ## Git 提交规范
 
@@ -198,7 +199,7 @@
     - 本服务不得建表、改表、执行迁移，也不得注册账号服务的组织、角色、菜单、权限、客户等实体。
     - `chat-web-base-schema` 中 `tb_account_user` 的任何结构变更必须同时评估账号服务和本服务，两个仓库的共享包依赖需要成对升级。
 - 本服务独占 Redis index `0`，只存放登录会话和图形验证码，不得写入其他 index，账号服务迁移后不再使用该索引。
-- 授权（权限码校验）不属于本服务职责，`RequirePermissions` 相关逻辑留在账号服务。
+- 本服务负责权限码校验与授权身份计算，对外只保留 `/feign/auth/permission/authorized-principal` 与 `/feign/auth/permission/cache/invalidate`。`RequirePermissions` 装饰器留在业务服务，由共享包 `AuthorizationGuard` 在需要时调用本服务。多个权限码为或关系；传入 `*` 时跳过权限校验但仍返回角色与数据权限。
 - 网关入口认证使用 `/internal/auth/token/introspect` 独立协议：用户令牌通过请求体传递，调用方身份通过 `X-Service-Token` 校验，服务凭据读取 Nacos `gateway.feign.service_token`。该路由不得加入 `gateway.routes`，也不得通过公开网关前缀暴露。
 - 本服务不需要配置 `feign.gateway.url`，也不作为业务 Feign 调用方；Gateway 通过 Nacos 服务发现直接访问本服务的内部内省地址。
 - 本服务需要其他业务数据时必须使用共享包的强类型 HTTP 客户端，不得连接其他服务数据库或执行跨业务库 SQL。
