@@ -3,11 +3,7 @@ import {
     AuthAuthorizedPrincipalResult,
     AuthPermissionCacheInvalidateInput,
     AuthPermissionCacheInvalidateResult,
-    AuthPermissionCheckInput,
-    AuthPermissionCheckResult,
-    AuthDataScopeInput,
-    AuthDataScopeResult,
-    AuthSuperAdminResult,
+    AuthAuthorizedPrincipalInput,
     FeignClientAuthImplementation,
     FeignClientAuthManager
 } from '@wlisfes/chat-web-base-schema/feign'
@@ -20,8 +16,11 @@ export class FeignService extends FeignClientAuthManager implements FeignClientA
         super()
     }
 
-    public override async checkPermission(_authorization: string, input: AuthPermissionCheckInput): Promise<AuthPermissionCheckResult> {
-        return { allowed: await this.permissionService.checkPermission(input) }
+    public override async resolveAuthorizedPrincipal(
+        _authorization: string,
+        input: AuthAuthorizedPrincipalInput
+    ): Promise<AuthAuthorizedPrincipalResult> {
+        return this.permissionService.resolveAuthorizedPrincipal(input.uid, input.permissionCodes)
     }
 
     public override async invalidatePermissionCache(
@@ -30,20 +29,5 @@ export class FeignService extends FeignClientAuthManager implements FeignClientA
     ): Promise<AuthPermissionCacheInvalidateResult> {
         await this.permissionService.invalidateCache(input)
         return { success: true }
-    }
-
-    public override async resolveDataScope(_authorization: string, input: AuthDataScopeInput): Promise<AuthDataScopeResult> {
-        return this.permissionService.resolveDataScope(input.uid, input.resourceCode)
-    }
-
-    public override async checkSuperAdmin(_authorization: string, input: { uid: string }): Promise<AuthSuperAdminResult> {
-        return { superAdmin: await this.permissionService.isSuperAdmin(input.uid) }
-    }
-
-    public override async resolveAuthorizedPrincipal(
-        _authorization: string,
-        input: AuthPermissionCheckInput
-    ): Promise<AuthAuthorizedPrincipalResult> {
-        return this.permissionService.resolveAuthorizedPrincipal(input.uid, input.permissionCodes)
     }
 }
