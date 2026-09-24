@@ -1,32 +1,27 @@
 import { Injectable } from '@nestjs/common'
-import {
-    AuthAuthorizedPrincipalResult,
-    AuthPermissionCacheInvalidateInput,
-    AuthPermissionCacheInvalidateResult,
-    AuthAuthorizedPrincipalInput,
-    FeignClientAuthImplementation,
-    FeignClientAuthManager
-} from '@wlisfes/chat-web-base-schema/feign'
+import * as FeignSchema from '@wlisfes/chat-web-base-schema/feign'
 import { PermissionService } from '@/modules/permission/permission.service'
 
 /** Auth Feign 接口实现；服务间凭据由共享 Feign 基类统一校验。 */
 @Injectable()
-export class FeignService extends FeignClientAuthManager implements FeignClientAuthImplementation {
+export class FeignService extends FeignSchema.FeignClientAuthManager implements FeignSchema.FeignClientAuthImplementation {
     constructor(private readonly permissionService: PermissionService) {
         super()
     }
 
-    public override async resolveAuthorizedPrincipal(
+    /** 校验权限码并返回授权身份、角色与数据范围。 */
+    public override async httpBaseAuthAuthorizedPrincipalResolver(
         _authorization: string,
-        input: AuthAuthorizedPrincipalInput
-    ): Promise<AuthAuthorizedPrincipalResult> {
+        input: FeignSchema.AuthAuthorizedPrincipalInput
+    ): Promise<FeignSchema.AuthAuthorizedPrincipalResult> {
         return this.permissionService.resolveAuthorizedPrincipal(input.uid, input.permissionCodes)
     }
 
-    public override async invalidatePermissionCache(
+    /** 按账号 UID 清理权限缓存。 */
+    public override async httpBaseAuthInvalidatePermissionCache(
         _authorization: string,
-        input: AuthPermissionCacheInvalidateInput
-    ): Promise<AuthPermissionCacheInvalidateResult> {
+        input: FeignSchema.AuthPermissionCacheInvalidateInput
+    ): Promise<FeignSchema.AuthPermissionCacheInvalidateResult> {
         await this.permissionService.invalidateCache(input)
         return { success: true }
     }
