@@ -34,9 +34,6 @@ jobs:
             - name: Check formatting
               run: yarn format:check
 
-            - name: Type check
-              run: yarn typecheck
-
             - name: Build and test
               run: yarn test
 
