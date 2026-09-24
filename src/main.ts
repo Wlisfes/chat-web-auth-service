@@ -2,7 +2,7 @@ import 'dotenv/config'
 import { NestFactory } from '@nestjs/core'
 import { NestExpressApplication } from '@nestjs/platform-express'
 import { setupSwagger } from '@wlisfes/chat-web-base-schema'
-import { ReadableConsoleLogger, createRequestLoggingMiddleware } from '@wlisfes/chat-web-base-schema/logging'
+import { ReadableConsoleLogger } from '@wlisfes/chat-web-base-schema/logging'
 import { requestContextMiddleware } from '@wlisfes/chat-web-base-schema/request-context'
 import { AppModule } from '@/app.module'
 
@@ -14,7 +14,6 @@ async function bootstrap() {
     const app = await NestFactory.create<NestExpressApplication>(AppModule, { logger })
     app.enableShutdownHooks()
     app.use(requestContextMiddleware)
-    app.use(createRequestLoggingMiddleware(process.env.NACOS_SERVICE_NAME))
     return await setupSwagger(app, {
         title: `Chat Web 鉴权服务 API`,
         description: `Chat Web 登录、令牌签发与会话校验接口文档`,
