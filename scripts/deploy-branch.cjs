@@ -1,3 +1,4 @@
+const fs = require('node:fs')
 const { execFileSync, spawnSync } = require('node:child_process')
 
 /**
@@ -9,6 +10,7 @@ const { execFileSync, spawnSync } = require('node:child_process')
  */
 
 const MAIN_BRANCH = 'main'
+const PACKAGE_FILE = 'package.json'
 
 /** Windows 下 gh 是 .cmd，需要走 shell 才能找到；参数带空格时不能用 shell 拼接，因此这里解析出真实可执行文件路径。 */
 function resolveCommand(command) {
@@ -74,6 +76,66 @@ function createPullRequest(branch, title) {
     return number
 }
 
+/** 读取 package.json 原文、缩进和换行符，改写后保持原有格式。 */
+function readPackage() {
+    const raw = fs.readFileSync(PACKAGE_FILE, 'utf8')
+    const eol = raw.includes('\r\n') ? '\r\n' : '\n'
+    const indentMatch = raw.match(/\n(\s+)"/)
+    return { raw, eol, indent: indentMatch ? indentMatch[1].length : 4, json: JSON.parse(raw) }
+}
+
+/** 写回 package.json 的版本号。 */
+function writeVersion(version) {
+    const { eol, indent, json } = readPackage()
+    json.version = version
+    let next = JSON.stringify(json, null, indent) + '\n'
+    if (eol === '\r\n') next = next.replace(/\n/g, '\r\n')
+    fs.writeFileSync(PACKAGE_FILE, next)
+}
+
+/** 递增补丁号。 */
+function bumpPatch(version) {
+    const parts = version.split('.').map(Number)
+    if (parts.length !== 3 || parts.some(item => !Number.isInteger(item))) {
+        throw new Error(`package.json 版本号格式无效：${version}`)
+    }
+    return `${parts[0]}.${parts[1]}.${parts[2] + 1}`
+}
+
+/** main 上已发布的版本号；读取失败时返回 undefined。 */
+function publishedVersion() {
+    try {
+        const raw = run('git', ['show', `origin/${MAIN_BRANCH}:${PACKAGE_FILE}`])
+        return JSON.parse(raw).version
+    } catch {
+        return undefined
+    }
+}
+
+/**
+ * 准备本次发布的版本号。
+ *
+ * 只有当前版本号已经发布到 main 时才递增；若上一次发布失败，当前版本号还没进入 main，
+ * 直接沿用同一个版本号重试，不会因为反复执行而把版本号越推越高。
+ */
+function prepareVersion() {
+    const current = readPackage().json.version
+    if (typeof current !== 'string' || current.length === 0) {
+        return undefined
+    }
+    const published = publishedVersion()
+    if (published !== current) {
+        console.log(`沿用当前版本号 ${current}（上一次发布未进入 ${MAIN_BRANCH}）`)
+        return current
+    }
+    const next = bumpPatch(current)
+    writeVersion(next)
+    runInherit('git', ['add', PACKAGE_FILE])
+    runInherit('git', ['commit', '-m', `chore(release): v${next}`])
+    console.log(`版本号 ${current} -> ${next}`)
+    return next
+}
+
 function main() {
     const branch = currentBranch()
     if (branch === MAIN_BRANCH) {
@@ -83,25 +145,30 @@ function main() {
         throw new Error('工作区存在未提交改动，请先提交后再发布')
     }
 
-    console.log(`[1/4] 推送 ${branch} 到远端`)
-    runInherit('git', ['push', 'origin', branch])
+    console.log(`[1/5] 同步远端分支信息`)
+    runInherit('git', ['fetch', 'origin', MAIN_BRANCH, branch])
 
-    console.log(`[2/4] 检查 ${branch} 与 ${MAIN_BRANCH} 的差异`)
+    console.log(`[2/5] 准备发布版本号`)
+    const version = prepareVersion()
+
+    console.log(`[3/5] 推送 ${branch} 到远端`)
+    runInherit('git', ['push', 'origin', branch])
     runInherit('git', ['fetch', 'origin', MAIN_BRANCH, branch])
     const ahead = countCommits(`origin/${MAIN_BRANCH}..origin/${branch}`)
 
     if (ahead === 0) {
         console.log(`${branch} 没有需要发布的提交，跳过合并`)
     } else {
-        console.log(`[3/4] ${branch} 有 ${ahead} 个提交待发布，合并到 ${MAIN_BRANCH}`)
+        console.log(`[4/5] ${branch} 有 ${ahead} 个提交待发布，合并到 ${MAIN_BRANCH}`)
+        const title = version ? `release: v${version}` : `release: ${branch} 合并到 ${MAIN_BRANCH}`
         const existing = findOpenPullRequest(branch)
-        const number = existing ?? createPullRequest(branch, `release: ${branch} 合并到 ${MAIN_BRANCH}`)
+        const number = existing ?? createPullRequest(branch, title)
         console.log(`合并 PR #${number}`)
         runInherit('gh', ['pr', 'merge', String(number), '--merge', '--delete-branch=false'])
         runInherit('git', ['fetch', 'origin', MAIN_BRANCH])
     }
 
-    console.log(`[4/4] 把 ${branch} 快进到 ${MAIN_BRANCH}`)
+    console.log(`[5/5] 把 ${branch} 快进到 ${MAIN_BRANCH}`)
     const behind = countCommits(`${branch}..origin/${MAIN_BRANCH}`)
     if (behind === 0) {
         console.log(`${branch} 已与 ${MAIN_BRANCH} 保持一致`)
