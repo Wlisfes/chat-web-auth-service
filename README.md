@@ -60,7 +60,6 @@ Swagger 文档：`http://127.0.0.1:5050/api/swagger`
 
 ```bash
 yarn format:check
-yarn typecheck
 yarn test
 ```
 
