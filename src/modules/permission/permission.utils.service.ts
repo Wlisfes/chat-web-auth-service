@@ -28,11 +28,11 @@ export class PermissionUtilsService {
     }
 
     /**补齐授权菜单的全部祖先节点*/
-    public includeMenuAncestors(grantedMenus: Schema.TbAccountMenu[], allMenus: Schema.TbAccountMenu[]): Set<number> {
-        const byKeyId = new Map(allMenus.map(menu => [menu.keyId, menu]))
+    public includeSheetAncestors(grantedSheets: Schema.TbAccountSheet[], allSheets: Schema.TbAccountSheet[]): Set<number> {
+        const byKeyId = new Map(allSheets.map(sheet => [sheet.keyId, sheet]))
         const result = new Set<number>()
-        for (const menu of grantedMenus) {
-            let current = menu
+        for (const sheet of grantedSheets) {
+            let current = sheet
             while (!result.has(current.keyId)) {
                 result.add(current.keyId)
                 if (!current.parentKeyId) break

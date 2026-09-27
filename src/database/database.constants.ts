@@ -1,10 +1,10 @@
 import {
-    TbAccountMenu,
+    TbAccountSheet,
     TbAccountOrganizationClosure,
     TbAccountRole,
     TbAccountRoleDataScope,
     TbAccountRoleDataScopeOrganization,
-    TbAccountRoleMenu,
+    TbAccountRoleSheet,
     TbAccountUser,
     TbAccountUserOrganization,
     TbAccountUserRole
@@ -23,8 +23,8 @@ export const AUTH_MYSQL_ENTITIES = [
     TbAccountUser,
     TbAccountRole,
     TbAccountUserRole,
-    TbAccountMenu,
-    TbAccountRoleMenu,
+    TbAccountSheet,
+    TbAccountRoleSheet,
     TbAccountRoleDataScope,
     TbAccountRoleDataScopeOrganization,
     TbAccountUserOrganization,

@@ -1,9 +1,9 @@
 import { Global, Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import {
-    TbAccountMenu,
+    TbAccountSheet,
     TbAccountRole,
-    TbAccountRoleMenu,
+    TbAccountRoleSheet,
     TbAccountUserRole,
     TbAccountRoleDataScope,
     TbAccountRoleDataScopeOrganization,
@@ -19,8 +19,8 @@ import { PermissionService } from '@/modules/permission/permission.service'
         TypeOrmModule.forFeature([
             TbAccountRole,
             TbAccountUserRole,
-            TbAccountMenu,
-            TbAccountRoleMenu,
+            TbAccountSheet,
+            TbAccountRoleSheet,
             TbAccountRoleDataScope,
             TbAccountRoleDataScopeOrganization,
             TbAccountUserOrganization,

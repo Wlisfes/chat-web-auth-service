@@ -78,5 +78,5 @@ export class PermissionAccessResponseDto {
     permissionCodes: string[]
 
     @ApiProperty({ description: '当前用户可访问的菜单树', type: [Object] })
-    menuTree: object[]
+    sheetTree: object[]
 }
