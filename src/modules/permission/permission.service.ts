@@ -13,8 +13,8 @@ export class PermissionService {
     constructor(
         @InjectRepository(Schema.TbAccountRole) private readonly roleRepository: Repository<Schema.TbAccountRole>,
         @InjectRepository(Schema.TbAccountUserRole) private readonly userRoleRepository: Repository<Schema.TbAccountUserRole>,
-        @InjectRepository(Schema.TbAccountMenu) private readonly menuRepository: Repository<Schema.TbAccountMenu>,
-        @InjectRepository(Schema.TbAccountRoleMenu) private readonly roleMenuRepository: Repository<Schema.TbAccountRoleMenu>,
+        @InjectRepository(Schema.TbAccountSheet) private readonly sheetRepository: Repository<Schema.TbAccountSheet>,
+        @InjectRepository(Schema.TbAccountRoleSheet) private readonly roleSheetRepository: Repository<Schema.TbAccountRoleSheet>,
         @InjectRepository(Schema.TbAccountRoleDataScope) private readonly dataScopeRepository: Repository<Schema.TbAccountRoleDataScope>,
         @InjectRepository(Schema.TbAccountRoleDataScopeOrganization)
         private readonly dataScopeOrganizationRepository: Repository<Schema.TbAccountRoleDataScopeOrganization>,
@@ -28,37 +28,39 @@ export class PermissionService {
     /** 返回当前用户启用角色、权限码和菜单树。 */
     public async resolveAccess(
         uid: string
-    ): Promise<{ superAdmin: boolean; roleCodes: string[]; permissionCodes: string[]; menuTree: unknown[] }> {
+    ): Promise<{ superAdmin: boolean; roleCodes: string[]; permissionCodes: string[]; sheetTree: unknown[] }> {
         const links = await this.userRoleRepository.find({ where: { userUid: uid } })
         const roles = links.length
             ? await this.roleRepository.find({
                   where: { keyId: In(links.map(item => item.roleKeyId)), status: Schema.TbAccountRoleStatus.ENABLED }
               })
             : []
-        const allMenus = await this.menuRepository.find({
-            where: { status: Schema.TbAccountMenuStatus.ENABLED },
+        const allSheets = await this.sheetRepository.find({
+            where: { status: Schema.TbAccountSheetStatus.ENABLED },
             order: { sort: 'ASC', keyId: 'ASC' }
         })
         const superAdmin = roles.some(role => role.code === 'super_admin')
-        const menuIds = superAdmin
-            ? allMenus.map(menu => menu.keyId)
-            : (await this.roleMenuRepository.find({ where: { roleKeyId: In(roles.map(role => role.keyId)) } })).map(item => item.menuKeyId)
-        const selected = allMenus.filter(menu => menuIds.includes(menu.keyId))
-        const selectedIds = new Set(selected.map(menu => menu.keyId))
-        selected.forEach(menu => {
-            let parent = menu.parentKeyId
+        const sheetIds = superAdmin
+            ? allSheets.map(sheet => sheet.keyId)
+            : (await this.roleSheetRepository.find({ where: { roleKeyId: In(roles.map(role => role.keyId)) } })).map(
+                  item => item.sheetKeyId
+              )
+        const selected = allSheets.filter(sheet => sheetIds.includes(sheet.keyId))
+        const selectedIds = new Set(selected.map(sheet => sheet.keyId))
+        selected.forEach(sheet => {
+            let parent = sheet.parentKeyId
             while (parent) {
                 selectedIds.add(parent)
-                parent = allMenus.find(item => item.keyId === parent)?.parentKeyId
+                parent = allSheets.find(item => item.keyId === parent)?.parentKeyId
             }
         })
         return {
             superAdmin,
             roleCodes: roles.map(role => role.code).sort(),
             permissionCodes: [
-                ...new Set(selected.map(menu => menu.permissionCode).filter((value): value is string => Boolean(value?.trim())))
+                ...new Set(selected.map(sheet => sheet.permissionCode).filter((value): value is string => Boolean(value?.trim())))
             ].sort(),
-            menuTree: buildTree(allMenus.filter(menu => selectedIds.has(menu.keyId)))
+            sheetTree: buildTree(allSheets.filter(sheet => selectedIds.has(sheet.keyId)))
         }
     }
 
@@ -134,15 +136,15 @@ export class PermissionService {
 
         let relatedRoleIds = roles.map(role => role.keyId)
         if (!skipCheck) {
-            const roleMenus = await this.roleMenuRepository.find({ where: { roleKeyId: In(relatedRoleIds) } })
-            if (!roleMenus.length) return self
-            const menus = await this.menuRepository.find({
-                where: { keyId: In(roleMenus.map(item => item.menuKeyId)), status: Schema.TbAccountMenuStatus.ENABLED }
+            const roleSheets = await this.roleSheetRepository.find({ where: { roleKeyId: In(relatedRoleIds) } })
+            if (!roleSheets.length) return self
+            const sheets = await this.sheetRepository.find({
+                where: { keyId: In(roleSheets.map(item => item.sheetKeyId)), status: Schema.TbAccountSheetStatus.ENABLED }
             })
             const allowedCodes = new Set(codes)
-            const menuCodes = new Map(menus.map(menu => [menu.keyId, menu.permissionCode?.trim() ?? '']))
+            const sheetCodes = new Map(sheets.map(sheet => [sheet.keyId, sheet.permissionCode?.trim() ?? '']))
             relatedRoleIds = [
-                ...new Set(roleMenus.filter(item => allowedCodes.has(menuCodes.get(item.menuKeyId) ?? '')).map(item => item.roleKeyId))
+                ...new Set(roleSheets.filter(item => allowedCodes.has(sheetCodes.get(item.sheetKeyId) ?? '')).map(item => item.roleKeyId))
             ]
             if (!relatedRoleIds.length) return self
         }
@@ -210,17 +212,17 @@ export class PermissionService {
             where: { keyId: In(userRoles.map(item => item.roleKeyId)), status: Schema.TbAccountRoleStatus.ENABLED }
         })
         if (roles.some(role => role.code === 'super_admin')) {
-            const all = await this.menuRepository.find({ where: { status: Schema.TbAccountMenuStatus.ENABLED } })
+            const all = await this.sheetRepository.find({ where: { status: Schema.TbAccountSheetStatus.ENABLED } })
             const permissions = all.map(item => item.permissionCode).filter((value): value is string => Boolean(value?.trim()))
             await this.redis.setEx(cacheKey, CACHE_SECONDS, JSON.stringify(permissions))
             return permissions
         }
-        const roleMenus = await this.roleMenuRepository.find({ where: { roleKeyId: In(roles.map(item => item.keyId)) } })
-        if (roleMenus.length === 0) return []
-        const menus = await this.menuRepository.find({
-            where: { keyId: In(roleMenus.map(item => item.menuKeyId)), status: Schema.TbAccountMenuStatus.ENABLED }
+        const roleSheets = await this.roleSheetRepository.find({ where: { roleKeyId: In(roles.map(item => item.keyId)) } })
+        if (roleSheets.length === 0) return []
+        const sheets = await this.sheetRepository.find({
+            where: { keyId: In(roleSheets.map(item => item.sheetKeyId)), status: Schema.TbAccountSheetStatus.ENABLED }
         })
-        const permissions = menus.map(item => item.permissionCode).filter((value): value is string => Boolean(value?.trim()))
+        const permissions = sheets.map(item => item.permissionCode).filter((value): value is string => Boolean(value?.trim()))
         await this.redis.setEx(cacheKey, CACHE_SECONDS, JSON.stringify(permissions))
         return permissions
     }

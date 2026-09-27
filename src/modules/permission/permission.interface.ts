@@ -8,5 +8,5 @@ export interface EffectiveAccess {
     superAdmin: boolean
     roleCodes: string[]
     permissionCodes: string[]
-    menuTree: unknown[]
+    sheetTree: unknown[]
 }
