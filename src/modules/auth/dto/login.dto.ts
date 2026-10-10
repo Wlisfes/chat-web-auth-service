@@ -3,6 +3,7 @@ import { Type } from 'class-transformer'
 import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Length, MaxLength, Min, ValidateIf } from 'class-validator'
 
 import { isNotEmpty } from '@wlisfes/chat-web-base-schema/utils'
+/** 获取图形验证码入参：GET /codex/write。 */
 export class CodexWriteQueryDto {
     @ApiPropertyOptional({ description: '是否使用反色验证码；1 表示启用，0 表示关闭', enum: ['0', '1'], default: '0', example: '0' })
     @IsOptional()
@@ -17,6 +18,7 @@ export class CodexWriteQueryDto {
     timestamp?: number
 }
 
+/** 使用工号、手机号或邮箱登录入参：POST /token/login。 */
 export class LoginDto {
     @ApiProperty({ description: '登录标识，支持工号、手机号或邮箱；优先使用此字段', example: '1001' })
     @ValidateIf(input => isNotEmpty(input.account) || !isNotEmpty(input.number))
