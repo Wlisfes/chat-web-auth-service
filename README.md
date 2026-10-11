@@ -50,7 +50,7 @@ Data ID `chat-web-auth-service.yaml` 必须提供：
 ## 本地开发
 
 ```bash
-yarn install
+node scripts/yarn-auth.cjs install --frozen-lockfile --check-files --ignore-scripts
 yarn dev
 ```
 
