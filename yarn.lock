@@ -730,10 +730,10 @@
     "@webassemblyjs/ast" "1.14.1"
     "@xtuc/long" "4.2.2"
 
-"@wlisfes/chat-web-base-schema@1.6.69":
-  version "1.6.69"
-  resolved "https://npm.pkg.github.com/download/@wlisfes/chat-web-base-schema/1.6.69/2f65869e8eaa644ca102e2bb548635308299aaf4#2f65869e8eaa644ca102e2bb548635308299aaf4"
-  integrity sha512-zrhFORHTVLvouSAKD97PhlCC2Bpowe01efSGnU+/0OX/R0/G0r32Q27nBo577jNMr6prBfHFqFZx6HyVwbZ8Cw==
+"@wlisfes/chat-web-base-schema@1.6.84":
+  version "1.6.84"
+  resolved "https://npm.pkg.github.com/download/@wlisfes/chat-web-base-schema/1.6.84/73100049a37e7f2bbcbf3d595704aabe219e4863#73100049a37e7f2bbcbf3d595704aabe219e4863"
+  integrity sha512-f+M3gra9he9N1hV6eTbC4OsmH880rjpjhsyGPYt27bqSwPZhh8i1upuYYaOT20hLL3ozWHG9XUfKKxDlfQmoww==
   dependencies:
     "@opentelemetry/api" "^1.9.0"
     "@types/lodash" "^4.17.25"
@@ -742,6 +742,7 @@
     cookie-parser "^1.4.7"
     dayjs "^1.11.21"
     lodash "^4.18.1"
+    uuid "^14.0.3"
 
 "@xtuc/ieee754@^1.2.0":
   version "1.2.0"
@@ -3384,6 +3385,11 @@ uuid@^11.1.1:
   version "11.1.1"
   resolved "https://registry.npmmirror.com/uuid/-/uuid-11.1.1.tgz#f6d81d2e1c65d00762e5e29b16c5d2d995e208ad"
   integrity sha512-vIYxrBCC/N/K+Js3qSN88go7kIfNPssr/hHCesKCQNAjmgvYS2oqr69kIufEG+O4+PfezOH4EbIeHCfFov8ZgQ==
+
+uuid@^14.0.3:
+  version "14.0.3"
+  resolved "https://registry.npmmirror.com/uuid/-/uuid-14.0.3.tgz#48c9b0dcf5a42d983c23162399eeb9af8b2cc617"
+  integrity sha512-Sc5u1VVln93y1Xnz4R+CunOZc7R9LUcTmhj7Rc7Eg3HVcf7rVn2FOoa812fe0W8p3jD7xeoGSYbfqCGGH2B6xw==
 
 uuid@^3.3.2:
   version "3.4.0"

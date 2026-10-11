@@ -14,7 +14,7 @@ import { isEmpty, isNotEmpty } from '@wlisfes/chat-web-base-schema/utils'
 @Injectable()
 export class AuthService {
     constructor(
-        @InjectRepository(Schema.TbAccountUser) private readonly userRepository: Repository<Schema.TbAccountUser>,
+        @InjectRepository(Schema.TbSkylineUser) private readonly userRepository: Repository<Schema.TbSkylineUser>,
         private readonly passwordService: PasswordService,
         private readonly tokenService: TokenService,
         private readonly sessionService: AuthSessionService,

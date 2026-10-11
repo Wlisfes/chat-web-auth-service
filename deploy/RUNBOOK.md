@@ -11,7 +11,7 @@
 | 容器端口 | `5050` |
 | Docker 网络 | `chat-web-infrastructure`（外部） |
 | Nacos Data ID | `chat-web-auth-service.yaml`（`DEFAULT_GROUP`） |
-| MySQL | `chat_web_account`，与账号服务共享，只读 `tb_account_user` |
+| MySQL | `chat-web-skyline`，与 Skyline 服务共享，只读登录与权限相关 `tb_skyline_*` 表 |
 | Redis | index `0`，存放登录会话与图形验证码 |
 | 健康检查 | `/health/live`（容器探针）、`/health/ready`（依赖就绪） |
 | 网关前缀 | `/api/auth` |
@@ -33,14 +33,14 @@ Data ID `chat-web-auth-service.yaml`（`DEFAULT_GROUP`）：
 server:
     port: 5050
 
-# 共享账号数据库；只读取 tb_account_user，唯一写入字段是 last_login_time。
+# 共享 Skyline 数据库；唯一写入字段是 tb_skyline_user.last_login_time。
 database:
-    chat-web-account:
-        host: chat-web-mysql
+    chat-web-skyline:
+        host: mysql
         port: 3306
-        name: chat_web_account
-        username: '<账号库用户名>'
-        password: '<账号库密码>'
+        database: chat-web-skyline
+        username: '<Skyline 库用户名>'
+        password: '<Skyline 库密码>'
         charset: utf8mb4
         timezone: '+08:00'
 
