@@ -5,22 +5,22 @@ import { InjectRepository, DataBaseService, In, Repository } from '@wlisfes/chat
 @Injectable()
 export class PermissionUtilsService {
     constructor(
-        @InjectRepository(Schema.TbAccountRole) private readonly roleRepository: Repository<Schema.TbAccountRole>,
-        @InjectRepository(Schema.TbAccountOrganizationClosure)
-        private readonly organizationClosureRepository: Repository<Schema.TbAccountOrganizationClosure>,
+        @InjectRepository(Schema.TbSkylineRole) private readonly roleRepository: Repository<Schema.TbSkylineRole>,
+        @InjectRepository(Schema.TbSkylineOrganizationClosure)
+        private readonly organizationClosureRepository: Repository<Schema.TbSkylineOrganizationClosure>,
         private readonly database: DataBaseService
     ) {}
 
     /**获取账号当前启用的角色*/
-    public async getEnabledRoles(userUid: string): Promise<Schema.TbAccountRole[]> {
-        const relations = await this.roleRepository.manager.find(Schema.TbAccountUserRole, { where: { userUid } })
+    public async getEnabledRoles(userUid: string): Promise<Schema.TbSkylineRole[]> {
+        const relations = await this.roleRepository.manager.find(Schema.TbSkylineUserRole, { where: { userUid } })
         if (relations.length === 0) {
             return []
         }
         return this.database.builder(this.roleRepository, qb =>
             qb
                 .where('t.keyId IN (:...roleKeyIds)', { roleKeyIds: relations.map(relation => relation.roleKeyId) })
-                .andWhere('t.status = :status', { status: Schema.TbAccountRoleStatus.ENABLED })
+                .andWhere('t.status = :status', { status: Schema.TbSkylineRoleStatus.ENABLED })
                 .orderBy('t.sort', 'ASC')
                 .addOrderBy('t.keyId', 'ASC')
                 .getMany()
@@ -28,7 +28,7 @@ export class PermissionUtilsService {
     }
 
     /**补齐授权菜单的全部祖先节点*/
-    public includeSheetAncestors(grantedSheets: Schema.TbAccountSheet[], allSheets: Schema.TbAccountSheet[]): Set<number> {
+    public includeSheetAncestors(grantedSheets: Schema.TbSkylineSheet[], allSheets: Schema.TbSkylineSheet[]): Set<number> {
         const byKeyId = new Map(allSheets.map(sheet => [sheet.keyId, sheet]))
         const result = new Set<number>()
         for (const sheet of grantedSheets) {

@@ -5,8 +5,8 @@ Chat Web 鉴权服务。负责登录、图形验证码、令牌签发与轮换�
 ## 职责边界
 
 - 本服务是 JWT 密钥和登录会话的唯一持有者，其他服务不得持有密钥或读取会话存储。
-- 本服务与账号服务共享 MySQL 数据库 `chat_web_account`，但只读取 `tb_account_user`；唯一写入的字段是 `last_login_time`，其余字段和全部其他表只由账号服务写入。
-- 用户资料、组织、角色、菜单和权限归账号服务；本服务不承担授权（权限码）校验。
+- 本服务与 Skyline 服务共享 MySQL 数据库 `chat-web-skyline`，只读取登录与权限计算所需的 `tb_skyline_*` 表；唯一写入的字段是 `tb_skyline_user.last_login_time`，其余字段和全部其他表只由 Skyline 服务写入。
+- 用户资料、组织、角色、菜单和权限归 Skyline 服务；本服务不承担授权（权限码）校验。
 - 登录会话独占 Redis index `0`。
 
 ## 公开路由
@@ -40,7 +40,7 @@ Chat Web 鉴权服务。负责登录、图形验证码、令牌签发与轮换�
 
 Data ID `chat-web-auth-service.yaml` 必须提供：
 
-- `database.chat-web-account`：共享账号数据库连接。
+- `database.chat-web-skyline`：共享 Skyline 数据库连接。
 - `redis`：登录会话存储，`database` 固定为 `0`。
 - `security.jwt.secret` / `issuer` / `audience` / `accessTokenTtlSeconds`：令牌签发参数。
 - `security.session.prefix`：登录会话键前缀。

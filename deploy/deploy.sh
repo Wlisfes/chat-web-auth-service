@@ -63,7 +63,7 @@ docker network inspect "$network" >/dev/null 2>&1 || {
     exit 1
 }
 
-# 鉴权服务与账号服务共享 chat_web_account 数据库，表结构由账号服务负责发布，这里不执行任何迁移。
+# 鉴权服务与 Skyline 服务共享 chat-web-skyline 数据库，表结构由 Skyline 服务负责发布，这里不执行任何迁移。
 echo "Starting $SERVICE"
 deployment_started=1
 if ! compose up -d --no-deps "$SERVICE"; then

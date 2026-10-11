@@ -7,21 +7,21 @@ import { InjectRepository, In, Repository } from '@wlisfes/chat-web-base-schema/
 import { buildTree } from '@wlisfes/chat-web-base-schema/utils'
 const CACHE_SECONDS = 60
 
-/** Auth 服务统一权限判断；权限数据只读自 Account 数据库。 */
+/** Auth 服务统一权限判断；权限数据只读自 Skyline 数据库。 */
 @Injectable()
 export class PermissionService {
     constructor(
-        @InjectRepository(Schema.TbAccountRole) private readonly roleRepository: Repository<Schema.TbAccountRole>,
-        @InjectRepository(Schema.TbAccountUserRole) private readonly userRoleRepository: Repository<Schema.TbAccountUserRole>,
-        @InjectRepository(Schema.TbAccountSheet) private readonly sheetRepository: Repository<Schema.TbAccountSheet>,
-        @InjectRepository(Schema.TbAccountRoleSheet) private readonly roleSheetRepository: Repository<Schema.TbAccountRoleSheet>,
-        @InjectRepository(Schema.TbAccountRoleDataScope) private readonly dataScopeRepository: Repository<Schema.TbAccountRoleDataScope>,
-        @InjectRepository(Schema.TbAccountRoleDataScopeOrganization)
-        private readonly dataScopeOrganizationRepository: Repository<Schema.TbAccountRoleDataScopeOrganization>,
-        @InjectRepository(Schema.TbAccountUserOrganization)
-        private readonly userOrganizationRepository: Repository<Schema.TbAccountUserOrganization>,
-        @InjectRepository(Schema.TbAccountOrganizationClosure)
-        private readonly organizationClosureRepository: Repository<Schema.TbAccountOrganizationClosure>,
+        @InjectRepository(Schema.TbSkylineRole) private readonly roleRepository: Repository<Schema.TbSkylineRole>,
+        @InjectRepository(Schema.TbSkylineUserRole) private readonly userRoleRepository: Repository<Schema.TbSkylineUserRole>,
+        @InjectRepository(Schema.TbSkylineSheet) private readonly sheetRepository: Repository<Schema.TbSkylineSheet>,
+        @InjectRepository(Schema.TbSkylineRoleSheet) private readonly roleSheetRepository: Repository<Schema.TbSkylineRoleSheet>,
+        @InjectRepository(Schema.TbSkylineRoleDataScope) private readonly dataScopeRepository: Repository<Schema.TbSkylineRoleDataScope>,
+        @InjectRepository(Schema.TbSkylineRoleDataScopeOrganization)
+        private readonly dataScopeOrganizationRepository: Repository<Schema.TbSkylineRoleDataScopeOrganization>,
+        @InjectRepository(Schema.TbSkylineUserOrganization)
+        private readonly userOrganizationRepository: Repository<Schema.TbSkylineUserOrganization>,
+        @InjectRepository(Schema.TbSkylineOrganizationClosure)
+        private readonly organizationClosureRepository: Repository<Schema.TbSkylineOrganizationClosure>,
         private readonly redis: RedisService
     ) {}
 
@@ -32,11 +32,11 @@ export class PermissionService {
         const links = await this.userRoleRepository.find({ where: { userUid: uid } })
         const roles = links.length
             ? await this.roleRepository.find({
-                  where: { keyId: In(links.map(item => item.roleKeyId)), status: Schema.TbAccountRoleStatus.ENABLED }
+                  where: { keyId: In(links.map(item => item.roleKeyId)), status: Schema.TbSkylineRoleStatus.ENABLED }
               })
             : []
         const allSheets = await this.sheetRepository.find({
-            where: { status: Schema.TbAccountSheetStatus.ENABLED },
+            where: { status: Schema.TbSkylineSheetStatus.ENABLED },
             order: { sort: 'ASC', keyId: 'ASC' }
         })
         const superAdmin = roles.some(role => role.code === 'super_admin')
@@ -115,7 +115,7 @@ export class PermissionService {
         const links = await this.userRoleRepository.find({ where: { userUid: uid } })
         const roles = links.length
             ? await this.roleRepository.find({
-                  where: { keyId: In(links.map(item => item.roleKeyId)), status: Schema.TbAccountRoleStatus.ENABLED }
+                  where: { keyId: In(links.map(item => item.roleKeyId)), status: Schema.TbSkylineRoleStatus.ENABLED }
               })
             : []
         const roleCodes = roles.map(role => role.code).sort()
@@ -139,7 +139,7 @@ export class PermissionService {
             const roleSheets = await this.roleSheetRepository.find({ where: { roleKeyId: In(relatedRoleIds) } })
             if (!roleSheets.length) return self
             const sheets = await this.sheetRepository.find({
-                where: { keyId: In(roleSheets.map(item => item.sheetKeyId)), status: Schema.TbAccountSheetStatus.ENABLED }
+                where: { keyId: In(roleSheets.map(item => item.sheetKeyId)), status: Schema.TbSkylineSheetStatus.ENABLED }
             })
             const allowedCodes = new Set(codes)
             const sheetCodes = new Map(sheets.map(sheet => [sheet.keyId, sheet.permissionCode?.trim() ?? '']))
@@ -150,35 +150,35 @@ export class PermissionService {
         }
 
         const scopes = await this.dataScopeRepository.find({
-            where: { roleKeyId: In(relatedRoleIds), status: Schema.TbAccountRoleDataScopeStatus.ENABLED }
+            where: { roleKeyId: In(relatedRoleIds), status: Schema.TbSkylineRoleDataScopeStatus.ENABLED }
         })
         if (!scopes.length) return self
-        if (scopes.some(scope => scope.scopeType === Schema.TbAccountRoleDataScopeType.ALL)) {
+        if (scopes.some(scope => scope.scopeType === Schema.TbSkylineRoleDataScopeType.ALL)) {
             return { allowed: true, superAdmin: false, roleCodes, all: true, items: [] }
         }
         const items = new Set<string>()
-        if (scopes.some(scope => scope.scopeType === Schema.TbAccountRoleDataScopeType.SELF)) items.add(uid)
+        if (scopes.some(scope => scope.scopeType === Schema.TbSkylineRoleDataScopeType.SELF)) items.add(uid)
         const organizationKeyIds = new Set<number>()
         const needPrimary = scopes.some(
             scope =>
-                scope.scopeType === Schema.TbAccountRoleDataScopeType.ORGANIZATION ||
-                scope.scopeType === Schema.TbAccountRoleDataScopeType.ORGANIZATION_TREE
+                scope.scopeType === Schema.TbSkylineRoleDataScopeType.ORGANIZATION ||
+                scope.scopeType === Schema.TbSkylineRoleDataScopeType.ORGANIZATION_TREE
         )
         const primaryIds = needPrimary
             ? (
                   await this.userOrganizationRepository.find({
-                      where: { userUid: uid, isPrimary: true, status: Schema.TbAccountUserOrganizationStatus.ENABLED }
+                      where: { userUid: uid, isPrimary: true, status: Schema.TbSkylineUserOrganizationStatus.ENABLED }
                   })
               ).map(item => item.organizationKeyId)
             : []
-        if (scopes.some(scope => scope.scopeType === Schema.TbAccountRoleDataScopeType.ORGANIZATION)) {
+        if (scopes.some(scope => scope.scopeType === Schema.TbSkylineRoleDataScopeType.ORGANIZATION)) {
             primaryIds.forEach(id => organizationKeyIds.add(id))
         }
-        if (primaryIds.length && scopes.some(scope => scope.scopeType === Schema.TbAccountRoleDataScopeType.ORGANIZATION_TREE)) {
+        if (primaryIds.length && scopes.some(scope => scope.scopeType === Schema.TbSkylineRoleDataScopeType.ORGANIZATION_TREE)) {
             const rows = await this.organizationClosureRepository.find({ where: { ancestorKeyId: In(primaryIds) } })
             rows.forEach(row => organizationKeyIds.add(row.descendantKeyId))
         }
-        const custom = scopes.filter(scope => scope.scopeType === Schema.TbAccountRoleDataScopeType.CUSTOM)
+        const custom = scopes.filter(scope => scope.scopeType === Schema.TbSkylineRoleDataScopeType.CUSTOM)
         if (custom.length) {
             const grants = await this.dataScopeOrganizationRepository.find({
                 where: { dataScopeKeyId: In(custom.map(scope => scope.keyId)) }
@@ -194,7 +194,7 @@ export class PermissionService {
             const members = await this.userOrganizationRepository.find({
                 where: {
                     organizationKeyId: In([...organizationKeyIds]),
-                    status: Schema.TbAccountUserOrganizationStatus.ENABLED
+                    status: Schema.TbSkylineUserOrganizationStatus.ENABLED
                 }
             })
             members.forEach(item => items.add(item.userUid))
@@ -209,10 +209,10 @@ export class PermissionService {
             return []
         }
         const roles = await this.roleRepository.find({
-            where: { keyId: In(userRoles.map(item => item.roleKeyId)), status: Schema.TbAccountRoleStatus.ENABLED }
+            where: { keyId: In(userRoles.map(item => item.roleKeyId)), status: Schema.TbSkylineRoleStatus.ENABLED }
         })
         if (roles.some(role => role.code === 'super_admin')) {
-            const all = await this.sheetRepository.find({ where: { status: Schema.TbAccountSheetStatus.ENABLED } })
+            const all = await this.sheetRepository.find({ where: { status: Schema.TbSkylineSheetStatus.ENABLED } })
             const permissions = all.map(item => item.permissionCode).filter((value): value is string => Boolean(value?.trim()))
             await this.redis.setEx(cacheKey, CACHE_SECONDS, JSON.stringify(permissions))
             return permissions
@@ -220,7 +220,7 @@ export class PermissionService {
         const roleSheets = await this.roleSheetRepository.find({ where: { roleKeyId: In(roles.map(item => item.keyId)) } })
         if (roleSheets.length === 0) return []
         const sheets = await this.sheetRepository.find({
-            where: { keyId: In(roleSheets.map(item => item.sheetKeyId)), status: Schema.TbAccountSheetStatus.ENABLED }
+            where: { keyId: In(roleSheets.map(item => item.sheetKeyId)), status: Schema.TbSkylineSheetStatus.ENABLED }
         })
         const permissions = sheets.map(item => item.permissionCode).filter((value): value is string => Boolean(value?.trim()))
         await this.redis.setEx(cacheKey, CACHE_SECONDS, JSON.stringify(permissions))

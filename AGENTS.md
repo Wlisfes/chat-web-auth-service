@@ -209,11 +209,11 @@
 ### 服务数据边界
 
 - 本服务是 JWT 密钥、令牌签发和登录会话的唯一所有者。其他服务不得持有 `security.jwt.*`、不得读取登录会话存储，只能通过内部认证协议校验令牌。
-- 本服务与账号服务**共享** MySQL 数据库 `chat_web_account`，这是经过评估的特例，不适用于其他任何服务组合。共享边界必须严格遵守：
-    - 本服务只注册 `TbAccountUser` 一个实体，只按登录标识和 UID 读取账号。
-    - 本服务对共享库的唯一写入是 `tb_account_user.last_login_time`；其余字段、其余全部表只由账号服务写入。
-    - 本服务不得建表、改表、执行迁移，也不得注册账号服务的组织、角色、菜单、权限、客户等实体。
-    - `chat-web-base-schema` 中 `tb_account_user` 的任何结构变更必须同时评估账号服务和本服务，两个仓库的共享包依赖需要成对升级。
+- 本服务与 Skyline 服务**共享** MySQL 数据库 `chat-web-skyline`，这是经过评估的特例，不适用于其他任何服务组合。共享边界必须严格遵守：
+    - 本服务只注册登录与权限计算所需的 `TbSkyline*` 实体（账号、角色、菜单、数据权限、组织闭包及其关联表），只读取这些数据。
+    - 本服务对共享库的唯一写入是 `tb_skyline_user.last_login_time`；其余字段、其余全部表只由 Skyline 服务写入。
+    - 本服务不得建表、改表、执行迁移，也不得注册与登录和权限计算无关的 Skyline 实体。
+    - `chat-web-base-schema` 中上述 `tb_skyline_*` 表的任何结构变更必须同时评估 Skyline 服务和本服务，两个仓库的共享包依赖需要成对升级。
 - 本服务独占 Redis index `0`，只存放登录会话和图形验证码，不得写入其他 index，账号服务迁移后不再使用该索引。
 - 本服务负责权限码校验与授权身份计算，对外只保留 `/feign/auth/permission/authorized-principal` 与 `/feign/auth/permission/cache/invalidate`。`RequirePermissions` 装饰器留在业务服务，由共享包 `AuthorizationGuard` 在需要时调用本服务。多个权限码为或关系；传入 `*` 时跳过权限校验但仍返回角色与数据权限。
 - 网关入口认证使用 `/internal/auth/token/introspect` 独立协议：用户令牌通过请求体传递，调用方身份通过 `X-Service-Token` 校验，服务凭据读取 Nacos `gateway.feign.service_token`。该路由不得加入 `gateway.routes`，也不得通过公开网关前缀暴露。
@@ -257,4 +257,4 @@
 
 - 当任务包含 `chat-web-base-schema` 公共能力变更时，Agent 必须自行等待共享包发布，随后将本服务升级到明确的新版本，不得要求用户手动更新依赖。
 - 升级后应优先使用共享包导出的实现并删除本地重复代码，运行仓库要求的完整测试，并按部署规则同步变更记录。
-- `tb_account_user` 相关变更必须与 `chat-web-account-service` 成对升级并同时验证。
+- 登录与权限相关 `tb_skyline_*` 表变更必须与 `chat-web-skyline-service` 成对升级并同时验证。

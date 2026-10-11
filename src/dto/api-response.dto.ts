@@ -50,7 +50,7 @@ export class ServiceReadinessResponseDto {
 }
 
 /** LoginResponseDto.user 字段结构；使用工号、手机号或邮箱登录响应：POST /token/login。 */
-export class LoginUserResponseDto extends PickType(Schema.TbAccountUserDto, ['uid', 'number', 'name', 'avatar'] as const) {}
+export class LoginUserResponseDto extends PickType(Schema.TbSkylineUserDto, ['uid', 'number', 'name', 'avatar'] as const) {}
 
 /** 续期并轮换当前登录会话响应：POST /token/continue。 */
 export class AccessTokenResponseDto {
@@ -71,7 +71,7 @@ export class LoginResponseDto extends AccessTokenResponseDto {
 }
 
 /** 当前登录账号资料；鉴权服务只读取账号表，不返回密码摘要。 */
-export class AccountUserResponseDto extends OmitType(Schema.TbAccountUserDto, ['password'] as const) {}
+export class AccountUserResponseDto extends OmitType(Schema.TbSkylineUserDto, ['password'] as const) {}
 
 /** 当前用户有效权限。 */
 export class PermissionAccessResponseDto {

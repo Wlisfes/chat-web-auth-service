@@ -1,5 +1,14 @@
 # 部署变更记录
 
+## 2026-10-12：账号与权限数据源切换到 Skyline
+
+- 影响机器：`chat-home-server`。
+- 关联版本：`@wlisfes/chat-web-base-schema@1.6.84`。
+- 变更内容：登录与权限计算改为读取 `chat-web-skyline` 库的 `tb_skyline_*` 表，Nacos 配置键改为 `database.chat-web-skyline`；唯一写入字段为 `tb_skyline_user.last_login_time`。验证码 Cookie、Redis 键前缀与 JWT issuer 保持不变，存量会话不受影响。
+- 机器侧操作：部署前已在 Nacos `chat-web-auth-service.yaml` 与 `chat-web-auth-service-development.yaml` 写入 `database.chat-web-skyline`（复制 Skyline 服务连接）；旧 `database.chat-web-account` 节点暂留用于回滚。
+- 验证命令：`yarn format:check`、`yarn test`；部署后检查 `https://chat.lisfes.cn/api/auth/health` 为 UP，并完成一次登录与授权身份查询。
+- 回滚方法：恢复上一完整 Git SHA 镜像，旧版本继续读取 `database.chat-web-account`。
+
 ## 2026-09-17：P0 事故记录，同机禁止注册 WireGuard 地址
 
 - 影响机器：`chat-home-server`。
