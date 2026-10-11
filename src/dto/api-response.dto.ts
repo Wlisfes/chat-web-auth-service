@@ -1,6 +1,7 @@
 import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
 import * as Schema from '@wlisfes/chat-web-base-schema'
 
+/** 鉴权服务存活检查响应：GET /health/live。 */
 export class ServiceLivenessResponseDto {
     @ApiProperty({ description: '服务状态', enum: ['UP'], example: 'UP' })
     status: string
@@ -9,6 +10,7 @@ export class ServiceLivenessResponseDto {
     timestamp: string
 }
 
+/** ServiceReadinessResponseDto.database 字段结构；响应：GET /health、GET /health/ready（鉴权服务健康检查；鉴权服务就绪检查）。 */
 export class ServiceDependencyResponseDto {
     @ApiProperty({ description: '依赖是否连接成功', example: true })
     connected: boolean
@@ -23,11 +25,13 @@ export class ServiceDependencyResponseDto {
     error?: string
 }
 
+/** ServiceReadinessResponseDto.security 字段结构；响应：GET /health、GET /health/ready（鉴权服务健康检查；鉴权服务就绪检查）。 */
 export class ServiceSecurityResponseDto {
     @ApiProperty({ description: 'JWT 密钥是否已正确配置', example: true })
     jwtConfigured: boolean
 }
 
+/** 响应：GET /health、GET /health/ready（鉴权服务健康检查；鉴权服务就绪检查）。 */
 export class ServiceReadinessResponseDto {
     @ApiProperty({ description: '服务就绪状态', enum: ['UP', 'DOWN'], example: 'UP' })
     status: string
@@ -45,8 +49,10 @@ export class ServiceReadinessResponseDto {
     security: ServiceSecurityResponseDto
 }
 
+/** LoginResponseDto.user 字段结构；使用工号、手机号或邮箱登录响应：POST /token/login。 */
 export class LoginUserResponseDto extends PickType(Schema.TbAccountUserDto, ['uid', 'number', 'name', 'avatar'] as const) {}
 
+/** 续期并轮换当前登录会话响应：POST /token/continue。 */
 export class AccessTokenResponseDto {
     @ApiProperty({ description: 'Bearer 访问令牌', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
     accessToken: string
@@ -58,6 +64,7 @@ export class AccessTokenResponseDto {
     expiresIn: number
 }
 
+/** 使用工号、手机号或邮箱登录响应：POST /token/login。 */
 export class LoginResponseDto extends AccessTokenResponseDto {
     @ApiProperty({ description: '当前登录账号', type: LoginUserResponseDto })
     user: LoginUserResponseDto
