@@ -4,7 +4,7 @@
 
 - 本文件已经复制到每个仓库内，独立生效；根目录 `AGENTS.md` 已废弃，不再作为开发依据。
 - 用户明确点名服务、仓库或目录时，只修改点名目标；不得因共享包联动、依赖检查或关联关系擅自改动其他项目。发布共享包后，只更新用户明确要求联动的消费服务。
-- `chat-web-account-service` 是微服务工程结构、编码格式和命名方式的基准项目。
+- `chat-web-skyline-service` 是微服务工程结构、编码格式和命名方式的基准项目（原基准 `chat-web-account-service` 已下线）。
 - `chat-web-base-schema` 由本仓库内更具体的 Schema 规则和 `docs/schema-conventions.md` 管理。
 - 新建服务时先复制基准工程配置，再删除不需要的业务模块；不要重新发明一套工程格式。
 
@@ -69,7 +69,7 @@
 
 ## NestJS 业务接口编码基准
 
-- `chat-web-account-service/src/modules/sheet/` 和 `src/modules/dept/` 是菜单、部门模块的 Controller、Service、DTO、Utils Service 与 Module 组织方式基准；下列规则必须完整写入每个 NestJS 仓库自己的 `AGENTS.md`，不得只依赖本工作区文件。
+- `chat-web-skyline-service/src/modules/sheet/` 和 `src/modules/organization/` 是菜单、组织模块的 Controller、Service、DTO、Utils Service 与 Module 组织方式基准；下列规则必须完整写入每个 NestJS 仓库自己的 `AGENTS.md`，不得只依赖本工作区文件。
 - Controller 必须保持为薄协议层：只声明路由、权限、Swagger/Apifox 元数据，接收 `query`、`body`、当前身份或必要请求/响应上下文，并将参数原样交给同名 Service 方法；禁止解构/改名业务参数、补业务默认值、拼装业务响应、访问 Repository 或编写业务判断。设置 Cookie、响应头、重定向和流式响应等纯 HTTP 协议操作可以保留在 Controller。
 - Controller 与对应 Service 的公开接口方法必须统一使用 `public async`，并采用 `httpBase<Service><Action><Resource>` 命名；两层方法名必须完全一致。Controller 不得调用 `create`、`list`、`findOne`、`update` 等另一套简写方法名。
 - Controller 的 `GET` 只接收 `@Query()` DTO，`POST` 只接收 `@Body()` DTO；局部变量使用 `query`、`body` 或 `input` 等能够准确表达来源的名称，无请求 DTO 的接口不制造空 DTO。每个接口都必须使用 `ApiServiceDecorator` 完整声明请求来源、请求 DTO、响应 DTO、数组标识和中文说明。
@@ -84,7 +84,7 @@
 
 ## 源码导入、目录与测试落地规则
 
-改造其他 NestJS 服务时必须按本节和上一节执行；基准代码为 `chat-web-account-service` 的 `src/modules/sheet/`、`src/health/`、`src/feign/`、`src/database/` 和 `test/*.test.cjs`。
+改造其他 NestJS 服务时必须按本节和上一节执行；基准代码为 `chat-web-skyline-service` 的 `src/modules/sheet/`、`src/app.controller.ts`（健康检查）、`src/feign/`、`src/database/` 和 `test/*.test.cjs`。
 
 ### 目录分层
 
@@ -222,7 +222,7 @@
 
 ### HTTP 模块实现基准
 
-- `chat-web-account-service/src/modules/sheet/` 是本工作区 HTTP 业务模块的结构基准；本仓库按认证域适配，不得另建接口风格。
+- `chat-web-skyline-service/src/modules/sheet/` 是本工作区 HTTP 业务模块的结构基准；本仓库按认证域适配，不得另建接口风格。
 - Controller 必须保持为薄协议层：除装饰器、`query`/`body` DTO、当前身份参数和调用同名 Service 方法外，不得进行 DTO 拆包、字段转换、默认值注入、数据库访问、业务校验或响应结构拼装。
 - Cookie 读写、Header 解析、流或文件响应、SVG 输出等依赖 Express 的纯 HTTP 协议适配允许保留在 Controller。禁止把 `Request`、`Response`、Cookie、Header 或响应发送逻辑传入业务 Service；协议例外必须写中文职责注释。
 - 公开 HTTP 方法统一声明为 `public async`，命名使用 `httpBaseAuth<Action><Resource>`；Controller 与对应 Service 的方法名称必须完全相同并直接返回调用结果。
