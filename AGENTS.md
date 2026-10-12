@@ -64,7 +64,7 @@
 - 服务间 Feign 查询接口必须同时提供单条和多条两个版本：单条命名为 `httpBase<Service><Resource>Resolver`，路由 `/<resource>/resolve`，入参使用单个主键（如 `{ keyId }`、`{ uid }`），返回单个对象，记录不存在时抛 `NotFoundException`；多条命名为 `httpBase<Service>Column<Resource>Resolver`，路由 `/<resource>/column/resolve`，入参使用主键数组（如 `{ keyIds }`、`{ uids }`），单次上限 100 个，返回数组，不存在的主键直接忽略。两个接口返回同一个摘要类型，并在 Schema 的 Feign 契约、客户端、服务端实现和测试中同步补齐；列表回显统一通过 Schema `feign-<service>.utils.ts` 中的 `append<Service><Resource>Options` 工具调用多条接口。基准为 `httpBaseSkylineUserResolver`/`httpBaseSkylineColumnUserResolver`、`httpBaseFinanceBrandResolver`/`httpBaseFinanceColumnBrandResolver`。
 - 管理端 `src/api/**/modules/*.service.ts` 必须保持为干净的传输层：接口函数接收与后端协议一致的类型，只负责发起请求并原样传递 `query`/`body`，禁止在 API 层做参数归一化、字段改名、默认值注入、类型转换、响应映射或响应包装。
 - 管理端页面字段与接口字段不一致时，转换、兼容和业务默认值必须放在页面/业务域层（如 composable、store 或业务 service）；不得在 API 文件中增加私有转换函数、Adapter 或隐式适配逻辑。服务端协议转换应放在 DTO/业务层。
-- HTTP 业务服务统一接入 `chat-web-base-schema` 的请求上下文中间件，用于接收网关传入的请求 ID；完整 HTTP 访问日志只由网关记录，业务服务不得重复注册 `createRequestLoggingMiddleware`，只记录业务过程、外部调用、定时任务和异常日志。
+- HTTP 业务服务统一接入 `chat-web-base-schema` 的请求上下文中间件和请求日志中间件：`main.ts` 中先注册 `requestContextMiddleware`，再注册 `createRequestLoggingMiddleware(process.env.NACOS_SERVICE_NAME)`，与网关输出相同格式的请求日志，通过同一日志ID与网关日志串联。
 - Docker Compose 统一使用 `json-file` 日志驱动，单文件最大 `20m`、保留 `30` 个文件；排障和轮转验证命令写入各服务 `deploy/RUNBOOK.md`。
 
 ## NestJS 业务接口编码基准
