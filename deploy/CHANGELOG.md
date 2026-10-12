@@ -1,5 +1,13 @@
 # 部署变更记录
 
+## 2026-10-12：认证命名切换为 Auth，所有用户重新登录
+
+- 影响机器：`chat-home-server`。
+- 变更内容：验证码 Cookie 由 `chat-web-account-captcha` 改为 `chat-web-auth-captcha`，验证码 Redis 前缀由 `chat-web:account:captcha` 改为 `chat-web:auth:captcha`；当前用户响应 DTO 更名为 `AuthUserResponseDto`。
+- 机器侧操作：部署前在 Nacos `chat-web-auth-service.yaml` 与 `chat-web-auth-service-development.yaml` 中将 `security.jwt.issuer` 改为 `chat-web-auth-service`，`security.session.prefix` 改为 `chat-web:auth:session`。存量令牌与会话全部失效，所有用户需要重新登录；旧 `chat-web:account:*` Redis 键已清理。
+- 验证命令：`yarn format:check`、`yarn test`；部署后检查 `https://chat.lisfes.cn/api/auth/health` 为 UP，`/api/auth/codex/write` 下发 `chat-web-auth-captcha` Cookie，旧令牌返回 401。
+- 回滚方法：恢复上一完整 Git SHA 镜像，并将 Nacos issuer 与 session.prefix 改回 `chat-web-account-service`、`chat-web:account:session`。
+
 ## 2026-10-12：账号与权限数据源切换到 Skyline
 
 - 影响机器：`chat-home-server`。

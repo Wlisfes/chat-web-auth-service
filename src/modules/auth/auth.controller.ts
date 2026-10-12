@@ -5,7 +5,7 @@ import { ApiServiceDecorator, ApifoxController, SuccessResponseDataDto } from '@
 import type { Request, Response } from 'express'
 import { AuthService } from '@/modules/auth/auth.service'
 import { AUTH_CAPTCHA_COOKIE } from '@/modules/auth/captcha.service'
-import { AccessTokenResponseDto, AccountUserResponseDto, LoginResponseDto, PermissionAccessResponseDto } from '@/dto/api-response.dto'
+import { AccessTokenResponseDto, AuthUserResponseDto, LoginResponseDto, PermissionAccessResponseDto } from '@/dto/api-response.dto'
 import { PermissionService } from '@/modules/permission/permission.service'
 import * as AuthDto from '@/modules/auth/dto/login.dto'
 
@@ -99,7 +99,7 @@ export class AuthController {
 
     @ApiServiceDecorator(Get('token/resolve'), {
         operation: { summary: '获取当前登录身份' },
-        response: { type: AccountUserResponseDto, description: '当前登录账号信息' },
+        response: { type: AuthUserResponseDto, description: '当前登录账号信息' },
         bearerAuth: true
     })
     public async httpBaseAuthResolverToken(@CurrentPrincipal() principal: AuthPrincipal) {

@@ -5,13 +5,13 @@ import { create } from 'svg-captcha'
 
 import { isEmpty } from '@wlisfes/chat-web-base-schema/utils'
 /** Cookie 名称保持与账号服务历史实现一致，避免迁移期间已下发的验证码会话失效。 */
-export const AUTH_CAPTCHA_COOKIE = 'chat-web-account-captcha'
+export const AUTH_CAPTCHA_COOKIE = 'chat-web-auth-captcha'
 
 @Injectable()
 export class CaptchaService {
     private readonly logger = new Logger(CaptchaService.name)
     /** Redis 键前缀沿用账号服务实现，迁移期间两侧读取同一批验证码。 */
-    private readonly keyPrefix = 'chat-web:account:captcha'
+    private readonly keyPrefix = 'chat-web:auth:captcha'
     public readonly expiresIn = 180
 
     constructor(private readonly redisService: RedisService) {}

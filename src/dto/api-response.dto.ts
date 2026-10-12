@@ -71,7 +71,7 @@ export class LoginResponseDto extends AccessTokenResponseDto {
 }
 
 /** 当前登录账号资料；鉴权服务只读取账号表，不返回密码摘要。 */
-export class AccountUserResponseDto extends OmitType(Schema.TbSkylineUserDto, ['password'] as const) {}
+export class AuthUserResponseDto extends OmitType(Schema.TbSkylineUserDto, ['password'] as const) {}
 
 /** 当前用户有效权限。 */
 export class PermissionAccessResponseDto {
