@@ -3,7 +3,7 @@ import { PasswordService, TokenService } from '@wlisfes/chat-web-base-schema/aut
 import type { AuthPrincipal } from '@wlisfes/chat-web-base-schema/auth'
 import { AuthSessionService } from '@wlisfes/chat-web-base-schema/auth-session'
 import { SuccessResponseDataDto } from '@wlisfes/chat-web-base-schema/decorator'
-import { AccessTokenResponseDto, AccountUserResponseDto, LoginResponseDto } from '@/dto/api-response.dto'
+import { AccessTokenResponseDto, AuthUserResponseDto, LoginResponseDto } from '@/dto/api-response.dto'
 import { AuthUtilsService } from '@/modules/auth/auth.utils.service'
 import { CaptchaService } from '@/modules/auth/captcha.service'
 import * as AuthDto from '@/modules/auth/dto/login.dto'
@@ -73,7 +73,7 @@ export class AuthService {
     }
 
     /**获取当前登录账号*/
-    public async httpBaseAuthResolverToken(principal: AuthPrincipal): Promise<AccountUserResponseDto> {
+    public async httpBaseAuthResolverToken(principal: AuthPrincipal): Promise<AuthUserResponseDto> {
         return this.authUtilsService.findActiveUserRequired(principal.uid)
     }
 

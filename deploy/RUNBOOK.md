@@ -52,16 +52,15 @@ redis:
     tls: false
     connectTimeoutMs: 5000
 
-# 令牌签发参数；必须与迁移前 chat-web-account-service.yaml 的值完全一致，
-# 否则所有存量访问令牌和登录会话立即失效。
+# 令牌签发参数；修改 secret、issuer、audience 或 session.prefix 会使所有存量访问令牌和登录会话立即失效。
 security:
     jwt:
         secret: '<至少32位随机串>'
-        issuer: chat-web-account-service
+        issuer: chat-web-auth-service
         audience: chat-web
         accessTokenTtlSeconds: 36000
     session:
-        prefix: '<与迁移前一致>'
+        prefix: 'chat-web:auth:session'
 
 # 内部内省接口的调用方凭据；与网关和各业务服务保持同一个值。
 gateway:
@@ -112,10 +111,10 @@ Nacos `chat-web-auth-service.yaml` 缺少或错配 JWT 配置。确认 `security
 检查 Gateway Nacos 是否配置了 `gateway.auth`、`gateway.routes` 中的 `id: auth` 路由，以及 Gateway 与本服务的 `gateway.feign.service_token` 是否一致；业务服务只验签 Gateway 下发的身份上下文。
 
 **所有用户被迫重新登录**
-通常是 `security.session.prefix` 或 `security.jwt.secret` 与迁移前不一致。恢复原值即可，会话数据本身没有丢失。
+通常是 `security.session.prefix`、`security.jwt.secret` 或 `security.jwt.issuer` 被修改。恢复原值即可，未过期的会话数据仍保留在 Redis。
 
 **验证码始终提示过期**
-确认本服务与账号服务的 Redis index 一致（`0`），且 `chat-web:account:captcha` 键前缀未被修改。
+确认 Redis index 为 `0`，浏览器登录请求携带 `chat-web-auth-captcha` Cookie，且 Redis 存在 `chat-web:auth:captcha:<sid>` 键。
 
 ## 回滚
 
@@ -125,4 +124,4 @@ cd /opt/chat-web-auth-service
 IMAGE=ghcr.io/wlisfes/chat-web-auth-service:<sha> docker compose -f compose.yml up -d --no-deps auth-service
 ```
 
-网关侧回滚只需把 Nacos `gateway.auth.accountServiceName` 改回 `chat-web-account-service`，无需重新部署。禁止在任何 compose 命令中使用 `--remove-orphans`。
+禁止在任何 compose 命令中使用 `--remove-orphans`。
