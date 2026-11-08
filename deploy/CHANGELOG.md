@@ -1,5 +1,14 @@
 # 部署变更记录
 
+## 2026-11-08：CRM 与 SRM 客户登录
+
+- 影响机器：`chat-home-server`。
+- 依赖：`@wlisfes/chat-web-base-schema@1.7.37`；CRM、SRM 先完成部署，以便 `tb_crm_user.password`、`tb_srm_user.password` 已存在。
+- 变更内容：新增客户邮箱密码登录，以及 CRM 自助注册。Auth 额外读取 `database.chat-web-crm` 与 `database.chat-web-srm`。
+- 机器侧操作：在 Nacos `chat-web-auth-service.yaml` 增加上述两个数据库节点，主机、账号与 CRM、SRM 服务生产配置一致。不修改 JWT issuer 与会话前缀，存量管理端令牌不受影响。
+- 验证命令：`yarn format:check`、`yarn test`；部署后 `GET /api/auth/health` 为 UP。
+- 回滚方法：回退 Auth 镜像。新增的数据库配置可保留，旧版本不会读取。
+
 ## 2026-10-12：认证命名切换为 Auth，所有用户重新登录
 
 - 影响机器：`chat-home-server`。
