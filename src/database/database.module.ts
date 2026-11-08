@@ -15,7 +15,11 @@ import {
 
 import { createMysqlOptions, DataBaseService } from '@wlisfes/chat-web-base-schema/database'
 
-function createNamedConnection(name: string, configKey: string, entities: NonNullable<Parameters<typeof createMysqlOptions>[1]['entities']>) {
+function createNamedConnection(
+    name: string,
+    configKey: string,
+    entities: NonNullable<Parameters<typeof createMysqlOptions>[1]['entities']>
+) {
     return TypeOrmModule.forRootAsync({
         name,
         imports: [ConfigModule],

@@ -6,7 +6,13 @@ import type { Request, Response } from 'express'
 import { AuthService } from '@/modules/auth/auth.service'
 import { PortalAuthService } from '@/modules/auth/portal-auth.service'
 import { AUTH_CAPTCHA_COOKIE } from '@/modules/auth/captcha.service'
-import { AccessTokenResponseDto, AuthUserResponseDto, LoginResponseDto, PermissionAccessResponseDto, PortalLoginResponseDto } from '@/dto/api-response.dto'
+import {
+    AccessTokenResponseDto,
+    AuthUserResponseDto,
+    LoginResponseDto,
+    PermissionAccessResponseDto,
+    PortalLoginResponseDto
+} from '@/dto/api-response.dto'
 import { PermissionService } from '@/modules/permission/permission.service'
 import * as AuthDto from '@/modules/auth/dto/login.dto'
 

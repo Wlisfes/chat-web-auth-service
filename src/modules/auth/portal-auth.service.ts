@@ -50,7 +50,9 @@ export class PortalAuthService {
         await this.captchaService.verify(captchaSid, input.code)
         const email = input.email.trim()
         const nickname = input.nickname.trim()
-        const exists = (await this.crmDataSource.query('SELECT key_id AS keyId FROM tb_crm_user WHERE email = ? LIMIT 1', [email])) as Array<{ keyId: number }>
+        const exists = (await this.crmDataSource.query('SELECT key_id AS keyId FROM tb_crm_user WHERE email = ? LIMIT 1', [
+            email
+        ])) as Array<{ keyId: number }>
         if (exists.length) {
             throw new ConflictException('邮箱已被注册')
         }
@@ -66,10 +68,11 @@ export class PortalAuthService {
                 [ownerUid, nickname, alias, defaults.brandKeyId, defaults.currency, email, password, defaults.source, ownerUid, ownerUid]
             )) as { insertId: number }
             const keyId = Number(inserted.insertId)
-            await manager.query(
-                `INSERT INTO tb_crm_user_config (user_key_id, sms_app_limit, create_by, modify_by) VALUES (?, 5, ?, ?)`,
-                [keyId, ownerUid, ownerUid]
-            )
+            await manager.query(`INSERT INTO tb_crm_user_config (user_key_id, sms_app_limit, create_by, modify_by) VALUES (?, 5, ?, ?)`, [
+                keyId,
+                ownerUid,
+                ownerUid
+            ])
             await manager.query(
                 `INSERT INTO tb_crm_user_contact (user_key_id, name, items, status, create_by, modify_by) VALUES (?, ?, ?, 'enable', ?, ?)`,
                 [keyId, nickname, JSON.stringify([]), ownerUid, ownerUid]
@@ -204,8 +207,13 @@ export class PortalAuthService {
         }
     }
 
-
-    private async resolveRegisterDefaults(): Promise<{ brandKeyId: number; currency: string; ownerUid: string; ownerNumber: string; source: number }> {
+    private async resolveRegisterDefaults(): Promise<{
+        brandKeyId: number
+        currency: string
+        ownerUid: string
+        ownerNumber: string
+        source: number
+    }> {
         const rows = (await this.crmDataSource.query(
             'SELECT brand_key_id AS brandKeyId, currency FROM tb_crm_user ORDER BY key_id ASC LIMIT 1'
         )) as Array<{ brandKeyId: number; currency: string }>
@@ -223,7 +231,9 @@ export class PortalAuthService {
         for (let attempt = 0; attempt < 10; attempt += 1) {
             const code = Array.from({ length: 4 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join('')
             const alias = `CSK${ownerNumber}${code}`
-            const exists = (await this.crmDataSource.query('SELECT key_id AS keyId FROM tb_crm_user WHERE alias = ? LIMIT 1', [alias])) as unknown[]
+            const exists = (await this.crmDataSource.query('SELECT key_id AS keyId FROM tb_crm_user WHERE alias = ? LIMIT 1', [
+                alias
+            ])) as unknown[]
             if (!exists.length) return alias
         }
         throw new ConflictException('客户别名生成失败，请重试')

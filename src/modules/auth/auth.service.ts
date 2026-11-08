@@ -86,7 +86,11 @@ export class AuthService {
     }
 
     /**获取当前登录账号*/
-    public async httpBaseAuthResolverToken(principal: AuthPrincipal): Promise<AuthUserResponseDto | { accountType: 'crm' | 'srm'; keyId: number; name: string; alias?: string; email: string; uid: string }> {
+    public async httpBaseAuthResolverToken(
+        principal: AuthPrincipal
+    ): Promise<
+        AuthUserResponseDto | { accountType: 'crm' | 'srm'; keyId: number; name: string; alias?: string; email: string; uid: string }
+    > {
         const profile = await this.portalAuthService.resolveProfile(principal.uid, principal.sessionId)
         if (profile) return profile
         return this.authUtilsService.findActiveUserRequired(principal.uid)
