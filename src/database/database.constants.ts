@@ -18,6 +18,12 @@ import {
  */
 export const AUTH_MYSQL_CONFIG_KEY = 'database.chat-web-skyline'
 
+/** CRM、SRM 客户登录只读各自账号表，不写入业务数据。 */
+export const AUTH_CRM_MYSQL_CONFIG_KEY = 'database.chat-web-crm'
+export const AUTH_SRM_MYSQL_CONFIG_KEY = 'database.chat-web-srm'
+export const AUTH_CRM_CONNECTION = 'crm'
+export const AUTH_SRM_CONNECTION = 'srm'
+
 /** 鉴权服务需要访问的 TypeORM 实体；只包含登录与权限计算所需的 Skyline 表。 */
 export const AUTH_MYSQL_ENTITIES = [
     TbSkylineUser,

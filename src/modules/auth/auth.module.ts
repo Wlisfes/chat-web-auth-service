@@ -4,6 +4,7 @@ import { InternalAuthGuard, PasswordService } from '@wlisfes/chat-web-base-schem
 import { TbSkylineUser } from '@wlisfes/chat-web-base-schema/chat-web-skyline-mysql'
 import { AuthController } from '@/modules/auth/auth.controller'
 import { AuthService } from '@/modules/auth/auth.service'
+import { PortalAuthService } from '@/modules/auth/portal-auth.service'
 import { AuthUtilsService } from '@/modules/auth/auth.utils.service'
 import { CaptchaService } from '@/modules/auth/captcha.service'
 import { InternalAuthController } from '@/modules/auth/internal-auth.controller'
@@ -17,7 +18,7 @@ import { InternalAuthController } from '@/modules/auth/internal-auth.controller'
 @Module({
     imports: [TypeOrmModule.forFeature([TbSkylineUser])],
     controllers: [AuthController, InternalAuthController],
-    providers: [AuthService, AuthUtilsService, CaptchaService, InternalAuthGuard, PasswordService],
+    providers: [AuthService, PortalAuthService, AuthUtilsService, CaptchaService, InternalAuthGuard, PasswordService],
     exports: [AuthService]
 })
 export class AuthModule {}

@@ -87,3 +87,27 @@ export class PermissionAccessResponseDto {
     @ApiProperty({ description: '当前用户可访问的菜单树', type: [Object] })
     sheetTree: object[]
 }
+
+/** CRM、SRM 客户登录后的账号资料。 */
+export class PortalLoginUserResponseDto {
+    @ApiProperty({ description: '客户主键', example: 10241000 })
+    keyId: number
+
+    @ApiProperty({ description: '账号名称', example: '测试客户' })
+    name: string
+
+    @ApiProperty({ description: '账号别名', required: false, example: 'CSK1001AB12' })
+    alias?: string
+
+    @ApiProperty({ description: '登录邮箱', example: 'consumer@example.com' })
+    email: string
+
+    @ApiProperty({ description: '账号类型', enum: ['crm', 'srm'], example: 'crm' })
+    accountType: 'crm' | 'srm'
+}
+
+/** CRM、SRM 客户登录响应：POST /token/crm/login、POST /token/srm/login。 */
+export class PortalLoginResponseDto extends AccessTokenResponseDto {
+    @ApiProperty({ description: '当前登录客户', type: PortalLoginUserResponseDto })
+    user: PortalLoginUserResponseDto
+}

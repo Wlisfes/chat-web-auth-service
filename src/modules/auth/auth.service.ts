@@ -3,9 +3,10 @@ import { PasswordService, TokenService } from '@wlisfes/chat-web-base-schema/aut
 import type { AuthPrincipal } from '@wlisfes/chat-web-base-schema/auth'
 import { AuthSessionService } from '@wlisfes/chat-web-base-schema/auth-session'
 import { SuccessResponseDataDto } from '@wlisfes/chat-web-base-schema/decorator'
-import { AccessTokenResponseDto, AuthUserResponseDto, LoginResponseDto } from '@/dto/api-response.dto'
+import { AccessTokenResponseDto, AuthUserResponseDto, LoginResponseDto, PortalLoginResponseDto } from '@/dto/api-response.dto'
 import { AuthUtilsService } from '@/modules/auth/auth.utils.service'
 import { CaptchaService } from '@/modules/auth/captcha.service'
+import { PortalAuthService } from '@/modules/auth/portal-auth.service'
 import * as AuthDto from '@/modules/auth/dto/login.dto'
 import * as Schema from '@wlisfes/chat-web-base-schema'
 
@@ -19,7 +20,8 @@ export class AuthService {
         private readonly tokenService: TokenService,
         private readonly sessionService: AuthSessionService,
         private readonly captchaService: CaptchaService,
-        private readonly authUtilsService: AuthUtilsService
+        private readonly authUtilsService: AuthUtilsService,
+        private readonly portalAuthService: PortalAuthService
     ) {}
 
     /**生成图形验证码*/
@@ -28,8 +30,17 @@ export class AuthService {
         return { ...captcha, expiresIn: this.captchaService.expiresIn }
     }
 
-    /**账号密码登录并签发访问令牌*/
-    public async httpBaseAuthLoginToken(input: AuthDto.LoginDto, captchaSid?: string): Promise<LoginResponseDto> {
+    /**账号密码登录并签发访问令牌。accountType 为 crm 或 srm 时复用客户登录。*/
+    public async httpBaseAuthLoginToken(input: AuthDto.LoginDto, captchaSid?: string): Promise<LoginResponseDto | PortalLoginResponseDto> {
+        if (input.accountType === 'crm' || input.accountType === 'srm') {
+            const email = input.email?.trim() || input.account?.trim()
+            if (isEmpty(email)) {
+                throw new UnauthorizedException('登录邮箱必填')
+            }
+            return input.accountType === 'crm'
+                ? this.portalAuthService.loginCrm({ email, password: input.password, code: input.code }, captchaSid)
+                : this.portalAuthService.loginSrm({ email, password: input.password, code: input.code }, captchaSid)
+        }
         await this.captchaService.verify(captchaSid, input.code)
         const account = isNotEmpty(input.account?.trim()) ? input.account.trim() : input.number?.trim()
         if (isEmpty(account)) {
@@ -62,6 +73,7 @@ export class AuthService {
     public async httpBaseAuthContinueToken(principal: AuthPrincipal): Promise<AccessTokenResponseDto> {
         const issued = this.tokenService.issueAccessToken(principal.uid)
         await this.sessionService.rotate(principal.sessionId, issued.claims)
+        await this.portalAuthService.moveSession(principal.sessionId, issued.claims.jti, issued.expiresIn)
         const { claims: _claims, ...token } = issued
         return token
     }
@@ -69,11 +81,14 @@ export class AuthService {
     /**退出并撤销当前登录会话*/
     public async httpBaseAuthLogoutToken(principal: AuthPrincipal): Promise<SuccessResponseDataDto> {
         await this.sessionService.revoke(principal.sessionId)
+        await this.portalAuthService.clearSession(principal.sessionId)
         return { success: true }
     }
 
     /**获取当前登录账号*/
-    public async httpBaseAuthResolverToken(principal: AuthPrincipal): Promise<AuthUserResponseDto> {
+    public async httpBaseAuthResolverToken(principal: AuthPrincipal): Promise<AuthUserResponseDto | { accountType: 'crm' | 'srm'; keyId: number; name: string; alias?: string; email: string; uid: string }> {
+        const profile = await this.portalAuthService.resolveProfile(principal.uid, principal.sessionId)
+        if (profile) return profile
         return this.authUtilsService.findActiveUserRequired(principal.uid)
     }
 
@@ -81,6 +96,8 @@ export class AuthService {
     public async httpBaseAuthIntrospectToken(token: string): Promise<AuthPrincipal> {
         const claims = this.tokenService.verifyAccessToken(token)
         await this.sessionService.assertActive(claims)
+        const portalPrincipal = await this.portalAuthService.resolvePrincipal(claims.sub, claims.jti)
+        if (portalPrincipal) return portalPrincipal
         const user = await this.authUtilsService.findActiveUserRequired(claims.sub)
         return {
             uid: user.uid,
