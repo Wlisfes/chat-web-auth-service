@@ -41,6 +41,8 @@ Chat Web 鉴权服务。负责登录、图形验证码、令牌签发与轮换�
 Data ID `chat-web-auth-service.yaml` 必须提供：
 
 - `database.chat-web-skyline`：共享 Skyline 数据库连接。
+- `database.chat-web-crm`：CRM 客户登录与自助注册使用的数据库连接，字段与 CRM 服务一致。
+- `database.chat-web-srm`：SRM 供应商登录使用的数据库连接，字段与 SRM 服务一致。
 - `redis`：登录会话存储，`database` 固定为 `0`。
 - `security.jwt.secret` / `issuer` / `audience` / `accessTokenTtlSeconds`：令牌签发参数。
 - `security.session.prefix`：登录会话键前缀。

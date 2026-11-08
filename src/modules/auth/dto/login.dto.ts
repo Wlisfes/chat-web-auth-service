@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
-import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Length, MaxLength, Min, ValidateIf } from 'class-validator'
+import { IsEmail, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Length, MaxLength, Min, ValidateIf } from 'class-validator'
 
 import { isNotEmpty } from '@wlisfes/chat-web-base-schema/utils'
 /** 获取图形验证码入参：GET /codex/write。 */
@@ -18,10 +18,28 @@ export class CodexWriteQueryDto {
     timestamp?: number
 }
 
-/** 使用工号、手机号或邮箱登录入参：POST /token/login。 */
+/** 使用工号、手机号或邮箱登录入参：POST /token/login。accountType 为 crm 或 srm 时走客户登录。 */
 export class LoginDto {
+    @ApiPropertyOptional({
+        description: '账号类型；crm 或 srm 时使用邮箱登录客户账号，不传时登录管理端',
+        enum: ['crm', 'srm'],
+        example: 'crm'
+    })
+    @IsOptional()
+    @IsIn(['crm', 'srm'], { message: '账号类型只能是crm或srm' })
+    accountType?: 'crm' | 'srm'
+
+    @ApiPropertyOptional({ description: '客户登录邮箱；accountType 为 crm 或 srm 时可替代 account', example: 'consumer@example.com' })
+    @ValidateIf(input => input.accountType === 'crm' || input.accountType === 'srm')
+    @IsOptional()
+    @IsEmail({}, { message: '邮箱格式错误' })
+    @MaxLength(128, { message: '登录邮箱长度不能超过128位' })
+    email?: string
+
     @ApiProperty({ description: '登录标识，支持工号、手机号或邮箱；优先使用此字段', example: '1001' })
-    @ValidateIf(input => isNotEmpty(input.account) || !isNotEmpty(input.number))
+    @ValidateIf(
+        input => input.accountType !== 'crm' && input.accountType !== 'srm' && (isNotEmpty(input.account) || !isNotEmpty(input.number))
+    )
     @IsString({ message: '登录账号必须是字符串' })
     @IsNotEmpty({ message: '登录账号必填' })
     @MaxLength(128, { message: '登录账号长度不能超过128位' })
@@ -38,6 +56,54 @@ export class LoginDto {
     @IsString({ message: '登录密码必须是字符串' })
     @IsNotEmpty({ message: '登录密码必填' })
     @MaxLength(128, { message: '登录密码长度不能超过128位' })
+    password: string
+
+    @ApiProperty({ description: '图形验证码', example: 'A7K9' })
+    @IsString({ message: '验证码必须是字符串' })
+    @IsNotEmpty({ message: '验证码必填' })
+    @Length(4, 4, { message: '验证码必须为4位' })
+    code: string
+}
+
+/** CRM、SRM 客户使用邮箱登录入参：POST /token/crm/login、POST /token/srm/login。 */
+export class PortalLoginDto {
+    @ApiProperty({ description: '登录邮箱', example: 'consumer@example.com' })
+    @IsEmail({}, { message: '邮箱格式错误' })
+    @IsNotEmpty({ message: '登录邮箱必填' })
+    @MaxLength(128, { message: '登录邮箱长度不能超过128位' })
+    email: string
+
+    @ApiProperty({ description: '登录密码', example: '123456', writeOnly: true })
+    @IsString({ message: '登录密码必须是字符串' })
+    @IsNotEmpty({ message: '登录密码必填' })
+    @MaxLength(128, { message: '登录密码长度不能超过128位' })
+    password: string
+
+    @ApiProperty({ description: '图形验证码', example: 'A7K9' })
+    @IsString({ message: '验证码必须是字符串' })
+    @IsNotEmpty({ message: '验证码必填' })
+    @Length(4, 4, { message: '验证码必须为4位' })
+    code: string
+}
+
+/** CRM 客户自助注册入参：POST /token/crm/register。 */
+export class PortalRegisterDto {
+    @ApiProperty({ description: '客户昵称', example: '张三' })
+    @IsString({ message: '昵称必须是字符串' })
+    @IsNotEmpty({ message: '昵称必填' })
+    @MaxLength(32, { message: '昵称长度不能超过32位' })
+    nickname: string
+
+    @ApiProperty({ description: '登录邮箱', example: 'consumer@example.com' })
+    @IsEmail({}, { message: '邮箱格式错误' })
+    @IsNotEmpty({ message: '登录邮箱必填' })
+    @MaxLength(128, { message: '登录邮箱长度不能超过128位' })
+    email: string
+
+    @ApiProperty({ description: '登录密码', example: '123456', writeOnly: true })
+    @IsString({ message: '登录密码必须是字符串' })
+    @IsNotEmpty({ message: '登录密码必填' })
+    @Length(6, 32, { message: '密码必须保持6~32位' })
     password: string
 
     @ApiProperty({ description: '图形验证码', example: 'A7K9' })

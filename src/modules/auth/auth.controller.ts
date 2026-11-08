@@ -4,8 +4,15 @@ import type { AuthPrincipal } from '@wlisfes/chat-web-base-schema/auth'
 import { ApiServiceDecorator, ApifoxController, SuccessResponseDataDto } from '@wlisfes/chat-web-base-schema/decorator'
 import type { Request, Response } from 'express'
 import { AuthService } from '@/modules/auth/auth.service'
+import { PortalAuthService } from '@/modules/auth/portal-auth.service'
 import { AUTH_CAPTCHA_COOKIE } from '@/modules/auth/captcha.service'
-import { AccessTokenResponseDto, AuthUserResponseDto, LoginResponseDto, PermissionAccessResponseDto } from '@/dto/api-response.dto'
+import {
+    AccessTokenResponseDto,
+    AuthUserResponseDto,
+    LoginResponseDto,
+    PermissionAccessResponseDto,
+    PortalLoginResponseDto
+} from '@/dto/api-response.dto'
 import { PermissionService } from '@/modules/permission/permission.service'
 import * as AuthDto from '@/modules/auth/dto/login.dto'
 
@@ -20,6 +27,7 @@ import * as AuthDto from '@/modules/auth/dto/login.dto'
 export class AuthController {
     constructor(
         private readonly authService: AuthService,
+        private readonly portalAuthService: PortalAuthService,
         private readonly permissionService: PermissionService
     ) {}
 
@@ -29,6 +37,9 @@ export class AuthController {
         bearerAuth: true
     })
     public async httpBaseAuthResolvePermission(@CurrentPrincipal() principal: AuthPrincipal) {
+        if (await this.portalAuthService.readAccountType(principal.sessionId)) {
+            return { superAdmin: false, roleCodes: [], permissionCodes: [], sheetTree: [] }
+        }
         return this.permissionService.resolveAccess(principal.uid)
     }
 
@@ -63,7 +74,7 @@ export class AuthController {
     @Public()
     @HttpCode(HttpStatus.OK)
     @ApiServiceDecorator(Post('token/login'), {
-        operation: { summary: '使用工号、手机号或邮箱登录' },
+        operation: { summary: '登录。不传 accountType 时使用工号、手机号或邮箱登录管理端；传 crm 或 srm 时使用邮箱登录客户账号' },
         request: { source: 'body', type: AuthDto.LoginDto },
         response: { type: LoginResponseDto, description: '登录成功并返回 Bearer Token' }
     })
@@ -73,6 +84,57 @@ export class AuthController {
         @Body() input: AuthDto.LoginDto
     ) {
         const result = await this.authService.httpBaseAuthLoginToken(input, this.getCookie(request, AUTH_CAPTCHA_COOKIE))
+        response.clearCookie(AUTH_CAPTCHA_COOKIE, { path: '/' })
+        return result
+    }
+
+    @Public()
+    @HttpCode(HttpStatus.OK)
+    @ApiServiceDecorator(Post('token/crm/login'), {
+        operation: { summary: 'CRM 客户使用邮箱和密码登录' },
+        request: { source: 'body', type: AuthDto.PortalLoginDto },
+        response: { type: PortalLoginResponseDto, description: '登录成功并返回 Bearer Token' }
+    })
+    public async httpBaseAuthLoginCrmToken(
+        @Req() request: Request,
+        @Res({ passthrough: true }) response: Response,
+        @Body() input: AuthDto.PortalLoginDto
+    ) {
+        const result = await this.portalAuthService.loginCrm(input, this.getCookie(request, AUTH_CAPTCHA_COOKIE))
+        response.clearCookie(AUTH_CAPTCHA_COOKIE, { path: '/' })
+        return result
+    }
+
+    @Public()
+    @HttpCode(HttpStatus.OK)
+    @ApiServiceDecorator(Post('token/crm/register'), {
+        operation: { summary: 'CRM 客户自助注册并登录' },
+        request: { source: 'body', type: AuthDto.PortalRegisterDto },
+        response: { type: PortalLoginResponseDto, description: '注册成功并返回 Bearer Token' }
+    })
+    public async httpBaseAuthRegisterCrmToken(
+        @Req() request: Request,
+        @Res({ passthrough: true }) response: Response,
+        @Body() input: AuthDto.PortalRegisterDto
+    ) {
+        const result = await this.portalAuthService.registerCrm(input, this.getCookie(request, AUTH_CAPTCHA_COOKIE))
+        response.clearCookie(AUTH_CAPTCHA_COOKIE, { path: '/' })
+        return result
+    }
+
+    @Public()
+    @HttpCode(HttpStatus.OK)
+    @ApiServiceDecorator(Post('token/srm/login'), {
+        operation: { summary: 'SRM 供应商使用邮箱和密码登录' },
+        request: { source: 'body', type: AuthDto.PortalLoginDto },
+        response: { type: PortalLoginResponseDto, description: '登录成功并返回 Bearer Token' }
+    })
+    public async httpBaseAuthLoginSrmToken(
+        @Req() request: Request,
+        @Res({ passthrough: true }) response: Response,
+        @Body() input: AuthDto.PortalLoginDto
+    ) {
+        const result = await this.portalAuthService.loginSrm(input, this.getCookie(request, AUTH_CAPTCHA_COOKIE))
         response.clearCookie(AUTH_CAPTCHA_COOKIE, { path: '/' })
         return result
     }
@@ -98,7 +160,7 @@ export class AuthController {
     }
 
     @ApiServiceDecorator(Get('token/resolve'), {
-        operation: { summary: '获取当前登录身份' },
+        operation: { summary: '获取当前登录身份。管理端返回账号资料，CRM 或 SRM 客户返回客户资料' },
         response: { type: AuthUserResponseDto, description: '当前登录账号信息' },
         bearerAuth: true
     })
