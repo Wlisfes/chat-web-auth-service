@@ -6,7 +6,7 @@ import { SuccessResponseDataDto } from '@wlisfes/chat-web-base-schema/decorator'
 import { AccessTokenResponseDto, AuthUserResponseDto, LoginResponseDto, PortalLoginResponseDto } from '@/dto/api-response.dto'
 import { AuthUtilsService } from '@/modules/auth/auth.utils.service'
 import { CaptchaService } from '@/modules/auth/captcha.service'
-import { PortalAuthService } from '@/modules/auth/portal-auth.service'
+import { PortalAuthService, type PortalProfile } from '@/modules/auth/portal-auth.service'
 import * as AuthDto from '@/modules/auth/dto/login.dto'
 import * as Schema from '@wlisfes/chat-web-base-schema'
 
@@ -86,11 +86,7 @@ export class AuthService {
     }
 
     /**获取当前登录账号*/
-    public async httpBaseAuthResolverToken(
-        principal: AuthPrincipal
-    ): Promise<
-        AuthUserResponseDto | { accountType: 'crm' | 'srm'; keyId: number; name: string; alias?: string; email: string; uid: string }
-    > {
+    public async httpBaseAuthResolverToken(principal: AuthPrincipal): Promise<AuthUserResponseDto | PortalProfile> {
         const profile = await this.portalAuthService.resolveProfile(principal.uid, principal.sessionId)
         if (profile) return profile
         return this.authUtilsService.findActiveUserRequired(principal.uid)

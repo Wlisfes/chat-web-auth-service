@@ -102,8 +102,56 @@ export class PortalLoginUserResponseDto {
     @ApiProperty({ description: '登录邮箱', example: 'consumer@example.com' })
     email: string
 
+    @ApiProperty({ description: '头像地址', required: false, nullable: true, example: 'https://picsum.photos/500' })
+    avatar: string | null
+
     @ApiProperty({ description: '账号类型', enum: ['crm', 'srm'], example: 'crm' })
     accountType: 'crm' | 'srm'
+
+    @ApiProperty({ description: '客户主键字符串，与管理端 uid 对齐', example: '10241010' })
+    uid: string
+
+    @ApiProperty({ description: '归属账号 UID', example: '2149446185344106496' })
+    ownerUserUid: string
+
+    @ApiProperty({ description: '财务品牌主键；仅 CRM 客户返回', required: false, nullable: true, example: 1001 })
+    brandKeyId?: number | null
+
+    @ApiProperty({ description: '财务币种编码', example: 'USD' })
+    currency: string
+
+    @ApiProperty({ description: '电话号码', required: false, nullable: true, example: '18888888888' })
+    phone: string | null
+
+    @ApiProperty({ description: '账号状态', example: 'enable' })
+    status: string
+
+    @ApiProperty({ description: '付款模式', example: 'prepaid' })
+    payMode: string
+
+    @ApiProperty({ description: '客户类型；仅 CRM 客户返回', required: false, nullable: true, example: 'common' })
+    classType?: string | null
+
+    @ApiProperty({ description: '等级', example: 1 })
+    level: number
+
+    @ApiProperty({ description: '阶段', example: 'cluetrail' })
+    stage: string
+
+    @ApiProperty({ description: '认证状态；仅 CRM 客户返回', required: false, nullable: true, example: 'unverified' })
+    authStatus?: string | null
+
+    @ApiProperty({ description: '注册来源枚举主键', example: 1 })
+    source: number
+
+    @ApiProperty({ description: '备注', required: false, nullable: true })
+    remark: string | null
+
+    @ApiProperty({ description: '创建时间', example: '2026-10-12 15:29:24' })
+    createTime: string | null
+
+    @ApiProperty({ description: '更新时间', example: '2026-11-14 22:05:29' })
+    modifyTime: string | null
 }
 
 /** CRM、SRM 客户登录响应：POST /token/crm/login、POST /token/srm/login。 */

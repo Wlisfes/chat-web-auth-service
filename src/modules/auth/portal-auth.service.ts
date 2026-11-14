@@ -12,15 +12,78 @@ import { CaptchaService } from '@/modules/auth/captcha.service'
 import * as AuthDto from '@/modules/auth/dto/login.dto'
 
 export type PortalAccountType = 'crm' | 'srm'
+function portalAccountColumns(accountType: PortalAccountType): string {
+    const brand = accountType === 'crm' ? 'brand_key_id AS brandKeyId' : 'NULL AS brandKeyId'
+    const classType = accountType === 'crm' ? 'class_type AS classType' : 'NULL AS classType'
+    const authStatus = accountType === 'crm' ? 'auth_status AS authStatus' : 'NULL AS authStatus'
+    return `key_id AS keyId, owner_user_uid AS ownerUserUid, name, alias, ${brand}, currency, email, avatar, phone,
+            status, pay_mode AS payMode, ${classType}, level, stage, ${authStatus}, source, remark,
+            create_time AS createTime, modify_time AS modifyTime, password`
+}
 
 type PortalAccountRow = {
     keyId: number | string
+    ownerUserUid: string
     name: string
     alias: string | null
+    brandKeyId?: number | string | null
+    currency: string
     email: string
+    avatar: string | null
+    phone: string | null
     status: string
+    payMode: string
+    classType?: string | null
+    level: number | string
+    stage: string
+    authStatus?: string | null
+    source: number | string
+    remark: string | null
+    createTime: Date | string | null
+    modifyTime: Date | string | null
     password: string
 }
+
+/** 客户资料接口返回客户表字段，不返回密码哈希。 */
+export function toPortalProfile(accountType: PortalAccountType, user: PortalAccountRow) {
+    const profile = {
+        accountType,
+        uid: String(user.keyId),
+        keyId: Number(user.keyId),
+        ownerUserUid: user.ownerUserUid,
+        name: user.name,
+        alias: user.alias || null,
+        currency: user.currency,
+        email: user.email,
+        avatar: user.avatar || null,
+        phone: user.phone || null,
+        status: user.status,
+        payMode: user.payMode,
+        level: Number(user.level),
+        stage: user.stage,
+        source: Number(user.source),
+        remark: user.remark || null,
+        createTime: formatPortalDateTime(user.createTime),
+        modifyTime: formatPortalDateTime(user.modifyTime)
+    }
+    if (accountType !== 'crm') return profile
+    return {
+        ...profile,
+        brandKeyId: user.brandKeyId == null ? null : Number(user.brandKeyId),
+        classType: user.classType || null,
+        authStatus: user.authStatus || null
+    }
+}
+
+function formatPortalDateTime(value: Date | string | null): string | null {
+    if (value == null || value === '') return null
+    const date = value instanceof Date ? value : new Date(value)
+    if (Number.isNaN(date.getTime())) return String(value)
+    const pad = (item: number) => String(item).padStart(2, '0')
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+}
+
+export type PortalProfile = ReturnType<typeof toPortalProfile>
 
 @Injectable()
 export class PortalAuthService {
@@ -102,14 +165,7 @@ export class PortalAuthService {
         const accountType = await this.readAccountType(sessionId)
         if (!accountType) return undefined
         const user = await this.findActiveAccount(accountType, sub)
-        return {
-            accountType,
-            keyId: Number(user.keyId),
-            name: user.name,
-            alias: user.alias || undefined,
-            email: user.email,
-            uid: String(user.keyId)
-        }
+        return toPortalProfile(accountType, user)
     }
 
     /** 按会话标记解析客户身份；没有标记时返回 undefined，交给管理端账号解析。 */
@@ -146,7 +202,7 @@ export class PortalAuthService {
         const email = input.email.trim()
         const dataSource = accountType === 'crm' ? this.crmDataSource : this.srmDataSource
         const rows = (await dataSource.query(
-            `SELECT key_id AS keyId, name, alias, email, status, password
+            `SELECT ${portalAccountColumns(accountType)}
              FROM \`${tableName}\`
              WHERE email = ?
              LIMIT 1`,
@@ -163,13 +219,7 @@ export class PortalAuthService {
         const { claims: _claims, ...token } = issued
         return {
             ...token,
-            user: {
-                keyId: Number(user.keyId),
-                name: user.name,
-                alias: user.alias || undefined,
-                email: user.email,
-                accountType
-            }
+            user: toPortalProfile(accountType, user)
         }
     }
 
@@ -177,7 +227,7 @@ export class PortalAuthService {
         const tableName = accountType === 'crm' ? 'tb_crm_user' : 'tb_srm_user'
         const dataSource = accountType === 'crm' ? this.crmDataSource : this.srmDataSource
         const rows = (await dataSource.query(
-            `SELECT key_id AS keyId, name, alias, email, status, password
+            `SELECT ${portalAccountColumns(accountType)}
              FROM \`${tableName}\`
              WHERE key_id = ?
              LIMIT 1`,
