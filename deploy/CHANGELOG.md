@@ -1,5 +1,13 @@
 # 部署变更记录
 
+## 2026-11-15：客户身份接口返回完整资料
+
+- 影响机器：`chat-home-server`。
+- 变更内容：CRM、SRM 客户的 `GET /api/auth/token/resolve` 和登录响应返回客户表字段，包括头像，不返回密码哈希。
+- 依赖：`tb_crm_user.avatar`、`tb_srm_user.avatar` 已存在。
+- 验证命令：客户登录后 `GET /api/auth/token/resolve` 包含 `avatar`、`phone`、`status` 等字段。
+- 回滚方法：回退 Auth 镜像。
+
 ## 2026-11-08：CRM 与 SRM 客户登录
 
 - 影响机器：`chat-home-server`。
