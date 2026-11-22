@@ -88,6 +88,15 @@ export class PermissionAccessResponseDto {
     sheetTree: object[]
 }
 
+/** CRM 客户配置：tb_crm_user_config。 */
+export class PortalUserConfigResponseDto {
+    @ApiProperty({ description: 'CRM 客户主键', example: 10241000 })
+    userKeyId: number
+
+    @ApiProperty({ description: '短信应用最大数', example: 5 })
+    smsAppLimit: number
+}
+
 /** CRM、SRM 客户登录后的账号资料。 */
 export class PortalLoginUserResponseDto {
     @ApiProperty({ description: '客户主键', example: 10241000 })
@@ -152,6 +161,9 @@ export class PortalLoginUserResponseDto {
 
     @ApiProperty({ description: '更新时间', example: '2026-11-14 22:05:29' })
     modifyTime: string | null
+
+    @ApiProperty({ description: '客户配置；仅 CRM 客户返回', required: false, type: PortalUserConfigResponseDto })
+    config?: PortalUserConfigResponseDto
 }
 
 /** CRM、SRM 客户登录响应：POST /token/crm/login、POST /token/srm/login。 */

@@ -11,6 +11,9 @@ import { PortalLoginResponseDto } from '@/dto/api-response.dto'
 import { CaptchaService } from '@/modules/auth/captcha.service'
 import * as AuthDto from '@/modules/auth/dto/login.dto'
 
+/** 与 tb_crm_user_config.sms_app_limit 默认值保持一致。 */
+const DEFAULT_SMS_APP_LIMIT = 5
+
 export type PortalAccountType = 'crm' | 'srm'
 function portalAccountColumns(accountType: PortalAccountType): string {
     const brand = accountType === 'crm' ? 'brand_key_id AS brandKeyId' : 'NULL AS brandKeyId'
@@ -44,8 +47,14 @@ type PortalAccountRow = {
     password: string
 }
 
-/** 客户资料接口返回客户表字段，不返回密码哈希。 */
-export function toPortalProfile(accountType: PortalAccountType, user: PortalAccountRow) {
+/** CRM 客户配置。未单独配置时短信应用最大数取默认值。 */
+export type PortalUserConfig = {
+    userKeyId: number
+    smsAppLimit: number
+}
+
+/** 客户资料接口返回客户表字段，不返回密码哈希。CRM 客户附带 tb_crm_user_config。 */
+export function toPortalProfile(accountType: PortalAccountType, user: PortalAccountRow, config?: PortalUserConfig) {
     const profile = {
         accountType,
         uid: String(user.keyId),
@@ -71,7 +80,8 @@ export function toPortalProfile(accountType: PortalAccountType, user: PortalAcco
         ...profile,
         brandKeyId: user.brandKeyId == null ? null : Number(user.brandKeyId),
         classType: user.classType || null,
-        authStatus: user.authStatus || null
+        authStatus: user.authStatus || null,
+        config: config ?? { userKeyId: Number(user.keyId), smsAppLimit: DEFAULT_SMS_APP_LIMIT }
     }
 }
 
@@ -165,7 +175,8 @@ export class PortalAuthService {
         const accountType = await this.readAccountType(sessionId)
         if (!accountType) return undefined
         const user = await this.findActiveAccount(accountType, sub)
-        return toPortalProfile(accountType, user)
+        const config = accountType === 'crm' ? await this.findCrmUserConfig(Number(user.keyId)) : undefined
+        return toPortalProfile(accountType, user, config)
     }
 
     /** 按会话标记解析客户身份；没有标记时返回 undefined，交给管理端账号解析。 */
@@ -217,9 +228,26 @@ export class PortalAuthService {
         await this.sessionService.create(issued.claims)
         await this.redisService.setEx(this.portalKey(issued.claims.jti), issued.expiresIn, accountType)
         const { claims: _claims, ...token } = issued
+        const config = accountType === 'crm' ? await this.findCrmUserConfig(Number(user.keyId)) : undefined
         return {
             ...token,
-            user: toPortalProfile(accountType, user)
+            user: toPortalProfile(accountType, user, config)
+        }
+    }
+
+    /** 查询 CRM 客户配置。没有配置行时返回默认短信应用上限。 */
+    private async findCrmUserConfig(userKeyId: number): Promise<PortalUserConfig> {
+        const rows = (await this.crmDataSource.query(
+            `SELECT user_key_id AS userKeyId, sms_app_limit AS smsAppLimit
+             FROM tb_crm_user_config
+             WHERE user_key_id = ?
+             LIMIT 1`,
+            [userKeyId]
+        )) as Array<{ userKeyId: number | string; smsAppLimit: number | string }>
+        const config = rows[0]
+        return {
+            userKeyId,
+            smsAppLimit: config?.smsAppLimit == null ? DEFAULT_SMS_APP_LIMIT : Number(config.smsAppLimit)
         }
     }
 

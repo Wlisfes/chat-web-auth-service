@@ -129,6 +129,38 @@ test('CRM 客户资料返回客户表字段且不包含密码', () => {
     assert.equal(profile.brandKeyId, 1001)
     assert.equal(profile.createTime, '2026-10-12 15:29:24')
     assert.equal(Object.hasOwn(profile, 'password'), false)
+    assert.deepEqual(profile.config, { userKeyId: 10241010, smsAppLimit: 5 })
+})
+
+test('CRM 客户资料使用查询到的客户配置', () => {
+    const { toPortalProfile } = require('../dist/modules/auth/portal-auth.service')
+    const profile = toPortalProfile(
+        'crm',
+        {
+            keyId: 10241010,
+            ownerUserUid: '2149446185344106496',
+            name: '青萍科技股份有限公司',
+            alias: 'CSK12333M5T',
+            brandKeyId: 1001,
+            currency: 'USD',
+            email: 'limvcfast@gmail.com',
+            avatar: null,
+            phone: '14260435722',
+            status: 'enable',
+            payMode: 'prepaid',
+            classType: 'common',
+            level: 1,
+            stage: 'cluetrail',
+            authStatus: 'unverified',
+            source: 1,
+            remark: null,
+            createTime: null,
+            modifyTime: null,
+            password: 'scrypt-secret'
+        },
+        { userKeyId: 10241010, smsAppLimit: 8 }
+    )
+    assert.deepEqual(profile.config, { userKeyId: 10241010, smsAppLimit: 8 })
 })
 
 test('SRM 客户资料不返回 CRM 专有字段', () => {
@@ -156,5 +188,6 @@ test('SRM 客户资料不返回 CRM 专有字段', () => {
     assert.equal(profile.avatar, 'https://picsum.photos/500')
     assert.equal(profile.level, 2)
     assert.equal(Object.hasOwn(profile, 'brandKeyId'), false)
+    assert.equal(Object.hasOwn(profile, 'config'), false)
     assert.equal(Object.hasOwn(profile, 'password'), false)
 })
